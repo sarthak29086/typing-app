@@ -1,0 +1,357 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+/* --- Watermark Background --- */
+.watermarked-bg {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='100'><text x='20' y='50' fill='rgba(0,0,0,0.06)' font-size='12' font-family='Arial' transform='rotate(-20 20 50)'>4437380389921</text></svg>");
+  background-repeat: repeat;
+  background-color: #f5f8fa;
+}
+
+/* --- Setup & Report Pages --- */
+.setup-container, .report-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.setup-card, .report-card {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 600px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-group input, .form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.submit-btn {
+  background: #3b82f6;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 100%;
+}
+
+.submit-btn:hover {
+  background: #2563eb;
+}
+
+/* --- Report Specific --- */
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.report-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.metric-box {
+  background: #f8fafc;
+  padding: 15px;
+  border-radius: 6px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.metric-title {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 5px;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: bold;
+  color: #0f172a;
+}
+
+.metric-desc {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 5px;
+}
+
+.error-analysis h2 {
+  margin-bottom: 15px;
+}
+
+/* --- Test Page Layout --- */
+.test-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.test-header {
+  background-color: #2b2b2b;
+  color: white;
+  padding: 8px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  border-bottom: 2px solid #eab308;
+}
+
+.test-title {
+  color: #eab308;
+  font-weight: bold;
+}
+
+.test-instructions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.info-icon {
+  background: #0078d7;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.test-sub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #d1d1d1;
+  background: #e9e9e9;
+  padding: 0 10px;
+  height: 45px;
+}
+
+.tabs-container {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.sections-label {
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 15px;
+  color: #444;
+}
+
+.tabs {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.tab {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background: white;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.tab.active {
+  background: #0078d7;
+  color: white;
+  border-color: #0078d7;
+}
+
+.tab .arrow-left {
+  font-size: 9px;
+  margin-right: 5px;
+  color: #d1d1d1;
+}
+
+.user-info-area {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.time-left {
+  font-weight: bold;
+  font-size: 13px;
+  color: #111;
+}
+
+.pause-resume-btn {
+  background: #0078d7;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.pause-resume-btn:hover {
+  background: #005a9e;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  padding: 5px 15px;
+  border-left: 1px solid #ccc;
+  background: white;
+  height: 45px;
+}
+
+.avatar {
+  font-size: 26px;
+  margin-right: 8px;
+}
+
+.username {
+  font-size: 13px;
+  font-weight: bold;
+}
+
+.test-content-header {
+  display: flex;
+  background: #4a7ebb;
+  color: white;
+  align-items: center;
+  padding: 5px 20px;
+  font-size: 13px;
+}
+
+.active-section-tab {
+  background: #0066cc;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  margin-right: 15px;
+  font-weight: bold;
+}
+
+.active-section-tab .arrow-left {
+  font-size: 9px;
+  margin-right: 5px;
+  color: #ccc;
+}
+
+.keyboard-layout {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.test-body {
+  display: flex;
+  padding: 15px;
+  flex: 1;
+  gap: 15px;
+}
+
+/* Left Column: holds display and input box, matches screenshot (around 58% width, cramped in the corner) */
+.test-left-column {
+  width: 58%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.test-right-column {
+  width: 42%;
+}
+
+.text-display-box {
+  width: 100%;
+  height: 180px;
+  border: 1px solid #a0a0a0;
+  padding: 8px 12px;
+  font-size: 14px; /* small font size as requested */
+  line-height: 1.4;
+  overflow-y: scroll;
+  background: rgba(255, 255, 255, 0.7); /* semi-transparent so watermark shows */
+  color: #111;
+  scroll-behavior: smooth;
+  font-family: Arial, sans-serif;
+  user-select: none;
+}
+
+/* Moving grey tracker removed as requested - transparent background */
+.current-word-tracker {
+  background: transparent;
+  text-decoration: none;
+  font-weight: normal;
+  border-bottom: 1px dotted transparent;
+}
+
+.typing-input-box {
+  width: 100%;
+  height: 180px;
+  border: 3px solid #f59e0b; /* Orange border matching screenshot */
+  padding: 8px 12px;
+  font-size: 14px; /* small font size as requested */
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+  background: rgba(255, 255, 255, 0.7); /* semi-transparent so watermark shows */
+  font-family: Arial, sans-serif;
+}
+
+.submit-area {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5px;
+}
+
+.submit-test-btn {
+  background: #5b9bd5;
+  color: white;
+  border: 1px solid #41719c;
+  padding: 6px 25px;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.submit-test-btn:hover {
+  background: #41719c;
+}
