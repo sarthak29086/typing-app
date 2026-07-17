@@ -112,8 +112,13 @@ export default function Test() {
           if (orig.toLowerCase() === typ.toLowerCase()) {
             caseError++;
             caseErrorDetails.unshift({ expected: orig, typed: typ });
-          } else if (origClean === typClean || origClean.toLowerCase() === typClean.toLowerCase()) {
+          } else if (origClean === typClean) {
             punctuationError++;
+            punctuationErrorDetails.unshift({ expected: orig, typed: typ });
+          } else if (origClean.toLowerCase() === typClean.toLowerCase()) {
+            caseError++;
+            punctuationError++;
+            caseErrorDetails.unshift({ expected: orig, typed: typ });
             punctuationErrorDetails.unshift({ expected: orig, typed: typ });
           } else {
             wrongSpelling++;
