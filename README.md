@@ -13,10 +13,14 @@ A React-based typing test application with a custom timer, dynamic error calcula
 ## Evaluation Rules
 
 - **Gross WPM**: (Total Keystrokes / 5) / Time (min)
-- **Real Speed (Net WPM)**: ((Total Keystrokes - 2 * Errors) / 5) / Time (min)
-- **Errors**: 
-  - Every omission, extra word (addition), and misspelling (including capitalization and punctuation) is counted as 1 error. 
-  - Errors are penalized by subtracting 2 keystrokes for each error from the total keystrokes.
+- **Real Speed (Net WPM)**: ((Gross Keystrokes / 5) - Penalties) / Time (min)
+- **Penalties**: Each error counts as 1 penalty (which effectively subtracts 1 from your Gross WPM). Penalties are categorized into:
+  - **Wrong Word Spelling**: Typed word does not match target.
+  - **Extra Word Added**: Typing more words than target.
+  - **Less Word Typed**: Skipping a word.
+  - **Punctuation Error**: Missing or adding incorrect punctuation.
+  - **Upper/Lower Case Error**: Incorrect capitalization.
+  - **Space Disparity**: Adding extra spaces.
 - **Time**: Calculated up to the moment the 'Submit' button is clicked or the timer runs out.
 
 ## Local Setup

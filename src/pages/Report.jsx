@@ -24,8 +24,8 @@ export default function Report() {
   // Build the copy prompt string
   const copyPromptText = `Evaluation Rules:
 - Gross WPM: (Total Keystrokes / 5) / Time (min)
-- Real Speed (Net WPM): ((Total Keystrokes - 2 * Errors) / 5) / Time (min)
-- Errors are subtracted from keystrokes (1 error = 2 keystrokes penalty)
+- Real Speed (Net WPM): ((Gross Keystrokes / 5) - Penalties) / Time (min)
+- Penalties: 1 error = 1 penalty (which subtracts 1 from Gross WPM)
 
 Test Performance:
 - Name: ${testConfig.name}
@@ -34,10 +34,15 @@ Test Performance:
 - Gross WPM: ${Math.round(testResults.grossWpm)}
 - Real Speed (Net WPM): ${Math.round(testResults.realSpeed)}
 - Total Keystrokes: ${testResults.totalKeystrokes}
-- Total Errors: ${testResults.errors}
-  * Spelling Mistakes: ${testResults.misspellings}
-  * Omissions: ${testResults.omissions}
-  * Additions: ${testResults.additions}
+- Total Penalties/Errors: ${testResults.errors}
+
+Penalty Breakdown:
+  * Wrong Word Spelling: ${testResults.wrongSpelling}
+  * Extra Word Added: ${testResults.extraWord}
+  * Less Word Typed: ${testResults.lessWord}
+  * Punctuation Error: ${testResults.punctuationError}
+  * Upper/Lower Case Error: ${testResults.caseError}
+  * Space Disparity: ${testResults.spaceDisparity}
 
 Original Paragraph:
 -------------------
@@ -81,10 +86,10 @@ ${testResults.typedText}`;
               <div className="metric-box">
                 <div className="metric-title">Real Speed</div>
                 <div className="metric-value">{Math.round(testResults.realSpeed)}</div>
-                <div className="metric-desc">((Keystrokes - 2 * Errors) / 5) / Time</div>
+                <div className="metric-desc">((Keystrokes / 5) - Penalties) / Time</div>
               </div>
               <div className="metric-box">
-                <div className="metric-title">Total Errors</div>
+                <div className="metric-title">Total Penalties</div>
                 <div className="metric-value">{testResults.errors}</div>
               </div>
               <div className="metric-box">
@@ -94,19 +99,31 @@ ${testResults.typedText}`;
             </div>
 
             <div className="error-analysis">
-              <h2>Detailed Error Analysis</h2>
-              <div className="report-metrics" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginTop: '15px' }}>
+              <h2>Detailed Error Analysis (Penalties)</h2>
+              <div className="report-metrics" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginTop: '15px', gap: '15px' }}>
                 <div className="metric-box" style={{ background: '#fef2f2', borderColor: '#fee2e2' }}>
-                  <div className="metric-title" style={{ color: '#991b1b' }}>Spelling Mistakes</div>
-                  <div className="metric-value" style={{ color: '#991b1b' }}>{testResults.misspellings}</div>
+                  <div className="metric-title" style={{ color: '#991b1b' }}>Wrong Spelling</div>
+                  <div className="metric-value" style={{ color: '#991b1b' }}>{testResults.wrongSpelling}</div>
                 </div>
                 <div className="metric-box" style={{ background: '#fffbeb', borderColor: '#fef3c7' }}>
-                  <div className="metric-title" style={{ color: '#92400e' }}>Omissions</div>
-                  <div className="metric-value" style={{ color: '#92400e' }}>{testResults.omissions}</div>
+                  <div className="metric-title" style={{ color: '#92400e' }}>Extra Word</div>
+                  <div className="metric-value" style={{ color: '#92400e' }}>{testResults.extraWord}</div>
                 </div>
                 <div className="metric-box" style={{ background: '#f0fdf4', borderColor: '#dcfce7' }}>
-                  <div className="metric-title" style={{ color: '#166534' }}>Additions</div>
-                  <div className="metric-value" style={{ color: '#166534' }}>{testResults.additions}</div>
+                  <div className="metric-title" style={{ color: '#166534' }}>Less Word</div>
+                  <div className="metric-value" style={{ color: '#166534' }}>{testResults.lessWord}</div>
+                </div>
+                <div className="metric-box" style={{ background: '#eff6ff', borderColor: '#dbeafe' }}>
+                  <div className="metric-title" style={{ color: '#1e40af' }}>Punctuation</div>
+                  <div className="metric-value" style={{ color: '#1e40af' }}>{testResults.punctuationError}</div>
+                </div>
+                <div className="metric-box" style={{ background: '#f5f3ff', borderColor: '#ede9fe' }}>
+                  <div className="metric-title" style={{ color: '#5b21b6' }}>Case Error</div>
+                  <div className="metric-value" style={{ color: '#5b21b6' }}>{testResults.caseError}</div>
+                </div>
+                <div className="metric-box" style={{ background: '#fdf4ff', borderColor: '#fae8ff' }}>
+                  <div className="metric-title" style={{ color: '#86198f' }}>Space Disparity</div>
+                  <div className="metric-value" style={{ color: '#86198f' }}>{testResults.spaceDisparity}</div>
                 </div>
               </div>
             </div>

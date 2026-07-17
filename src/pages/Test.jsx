@@ -79,9 +79,12 @@ export default function Test() {
     let i = original.length;
     let j = typed.length;
     
-    let misspellings = 0;
-    let omissions = 0;
-    let additions = 0;
+    let wrongSpelling = 0;
+    let extraWord = 0;
+    let lessWord = 0;
+    let punctuationError = 0;
+    let caseError = 0;
+    let spaceDisparity = 0;
     
     while (i > 0 || j > 0) {
       if (i > 0 && j > 0 && original[i-1] === typed[j-1]) {
@@ -94,20 +97,37 @@ export default function Test() {
         
         const minScore = Math.min(omitScore, addScore, subScore);
         if (minScore === subScore) {
-          misspellings++;
+          const orig = original[i-1];
+          const typ = typed[j-1];
+          const origClean = orig.replace(/[.,/#!$%^&*;:{}=\-_`~()'"?]/g, "");
+          const typClean = typ.replace(/[.,/#!$%^&*;:{}=\-_`~()'"?]/g, "");
+          
+          if (orig.toLowerCase() === typ.toLowerCase()) {
+            caseError++;
+          } else if (origClean === typClean || origClean.toLowerCase() === typClean.toLowerCase()) {
+            punctuationError++;
+          } else {
+            wrongSpelling++;
+          }
           i--;
           j--;
         } else if (minScore === omitScore) {
-          omissions++;
+          lessWord++;
           i--;
         } else {
-          additions++;
+          const typ = typed[j-1];
+          if (typ === "") {
+            spaceDisparity++;
+          } else {
+            extraWord++;
+          }
           j--;
         }
       }
     }
     
-    return { misspellings, omissions, additions, totalErrors: misspellings + omissions + additions };
+    const totalErrors = wrongSpelling + extraWord + lessWord + punctuationError + caseError + spaceDisparity;
+    return { wrongSpelling, extraWord, lessWord, punctuationError, caseError, spaceDisparity, totalErrors };
   };
 
   const endTest = () => {
@@ -130,15 +150,18 @@ export default function Test() {
     // Gross WPM: (Total Keystrokes / 5) / (Time Taken in minutes)
     const grossWpm = (totalKeystrokes / 5) / timeTakenMinutes;
     
-    // Real Speed: ((Total Keystrokes - 2 * Errors) / 5) / (Time Taken in minutes)
-    const realSpeed = ((totalKeystrokes - (2 * alignment.totalErrors)) / 5) / timeTakenMinutes;
+    // Real Speed: ((Gross Keystrokes / 5) - Penalties) / Time (in minutes)
+    const realSpeed = ((totalKeystrokes / 5) - alignment.totalErrors) / timeTakenMinutes;
 
     setTestResults({
       timeTakenSeconds,
       errors: alignment.totalErrors,
-      misspellings: alignment.misspellings,
-      omissions: alignment.omissions,
-      additions: alignment.additions,
+      wrongSpelling: alignment.wrongSpelling,
+      extraWord: alignment.extraWord,
+      lessWord: alignment.lessWord,
+      punctuationError: alignment.punctuationError,
+      caseError: alignment.caseError,
+      spaceDisparity: alignment.spaceDisparity,
       grossWpm: Math.max(0, grossWpm),
       realSpeed: Math.max(0, realSpeed),
       totalKeystrokes,
@@ -224,7 +247,7 @@ export default function Test() {
     const liveAlignment = alignWords(currentOriginalWords, currentTypedWords);
     
     currentGrossWpm = Math.max(0, Math.round((typedText.length / 5) / elapsedMinutes));
-    currentRealWpm = Math.max(0, Math.round(((typedText.length - (2 * liveAlignment.totalErrors)) / 5) / elapsedMinutes));
+    currentRealWpm = Math.max(0, Math.round(((typedText.length / 5) - liveAlignment.totalErrors) / elapsedMinutes));
   }
 
   return (
