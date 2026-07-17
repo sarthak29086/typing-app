@@ -152,17 +152,29 @@ export default function Test() {
   };
 
   const endTest = () => {
-    // Normalize newlines to spaces for exact space-by-space word lists
-    const cleanTypedText = typedText.replace(/\r?\n/g, ' ');
-    const cleanTargetText = targetText.replace(/\r?\n/g, ' ');
+    // Normalize newlines to spaces
+    const cleanTypedText = typedText.replace(/\r?\n/g, ' ').trim();
     
-    const typedWords = cleanTypedText.split(' ');
-    const originalWords = cleanTargetText.split(' ');
+    // Always use the BASE paragraph (testConfig.paragraph) as ground truth for comparison.
+    // targetText is extended for display purposes and should NOT be used here.
+    const baseParagraph = testConfig.paragraph.replace(/\r?\n/g, ' ').trim();
     
-    // Perform robust alignment to count and categorize errors strictly
-    const alignment = alignWords(originalWords.slice(0, typedWords.length), typedWords);
+    const typedWords = cleanTypedText.split(/\s+/).filter(w => w.length > 0);
+    const baseWords = baseParagraph.split(/\s+/).filter(w => w.length > 0);
     
-    const attemptedTargetText = originalWords.slice(0, typedWords.length).join(' ');
+    // Build the repeated original words array to match the length the user typed into
+    let originalWords = [];
+    while (originalWords.length < typedWords.length) {
+      originalWords = originalWords.concat(baseWords);
+    }
+    // Trim to exactly what the user typed (word count)
+    originalWords = originalWords.slice(0, typedWords.length);
+    
+    // Perform alignment against the proper (non-repeated-contaminated) original
+    const alignment = alignWords(originalWords, typedWords);
+    
+    // For the copy prompt: show the base paragraph up to max typed word index (no repetition)
+    const attemptedTargetText = baseWords.slice(0, Math.min(typedWords.length, baseWords.length)).join(' ');
     
     const timeTakenSeconds = timeElapsed === 0 ? 1 : timeElapsed;
     const timeTakenMinutes = timeTakenSeconds / 60;
