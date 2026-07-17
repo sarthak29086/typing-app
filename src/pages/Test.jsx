@@ -111,10 +111,14 @@ export default function Test() {
   };
 
   const endTest = () => {
-    const typedWords = typedText.trim().split(/\s+/).filter(w => w.length > 0);
-    const originalWords = targetText.trim().split(/\s+/);
+    // Normalize newlines to spaces for exact space-by-space word lists
+    const cleanTypedText = typedText.replace(/\r?\n/g, ' ');
+    const cleanTargetText = targetText.replace(/\r?\n/g, ' ');
     
-    // Perform robust alignment to count and categorize errors
+    const typedWords = cleanTypedText.split(' ');
+    const originalWords = cleanTargetText.split(' ');
+    
+    // Perform robust alignment to count and categorize errors strictly
     const alignment = alignWords(originalWords.slice(0, typedWords.length), typedWords);
     
     const timeTakenSeconds = timeElapsed === 0 ? 1 : timeElapsed;
@@ -168,7 +172,10 @@ export default function Test() {
   };
 
   const targetWords = targetText.split(' ');
-  const typedWordsCount = typedText === '' ? 0 : (typedText.endsWith(' ') ? typedText.trim().split(/\s+/).length : Math.max(0, typedText.trim().split(/\s+/).length - 1));
+  
+  // Track words split strictly by space for highlighting active word position
+  const cleanTypedTextLive = typedText.replace(/\r?\n/g, ' ');
+  const typedWordsCount = typedText === '' ? 0 : (cleanTypedTextLive.endsWith(' ') ? cleanTypedTextLive.split(' ').length : Math.max(0, cleanTypedTextLive.split(' ').length - 1));
 
   // Line-by-line scrolling logic
   useEffect(() => {
@@ -196,8 +203,10 @@ export default function Test() {
   let currentRealWpm = 0;
 
   if (elapsedMinutes > 0) {
-    const currentTypedWords = typedText.trim().split(/\s+/).filter(w => w.length > 0);
-    const currentOriginalWords = targetText.trim().split(/\s+/).slice(0, currentTypedWords.length);
+    const cleanTypedLive = typedText.replace(/\r?\n/g, ' ');
+    const cleanOriginalLive = targetText.replace(/\r?\n/g, ' ');
+    const currentTypedWords = cleanTypedLive.split(' ');
+    const currentOriginalWords = cleanOriginalLive.split(' ').slice(0, currentTypedWords.length);
     const liveAlignment = alignWords(currentOriginalWords, currentTypedWords);
     
     currentGrossWpm = Math.max(0, Math.round((typedText.length / 5) / elapsedMinutes));

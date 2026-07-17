@@ -40,11 +40,14 @@ export default function Setup() {
       });
     }
 
+    // Normalize target paragraph: replace all multiple whitespaces/newlines with a single space
+    const normalizedParagraph = formData.paragraph.replace(/\s+/g, ' ').trim();
+
     setTestConfig({
       name: formData.name,
       practiceNo: formData.practiceNo,
       timerSeconds: totalSeconds,
-      paragraph: formData.paragraph,
+      paragraph: normalizedParagraph,
     });
     navigate('/test');
   };
