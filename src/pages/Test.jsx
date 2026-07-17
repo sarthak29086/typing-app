@@ -121,6 +121,8 @@ export default function Test() {
     // Perform robust alignment to count and categorize errors strictly
     const alignment = alignWords(originalWords.slice(0, typedWords.length), typedWords);
     
+    const attemptedTargetText = originalWords.slice(0, typedWords.length).join(' ');
+    
     const timeTakenSeconds = timeElapsed === 0 ? 1 : timeElapsed;
     const timeTakenMinutes = timeTakenSeconds / 60;
     const totalKeystrokes = typedText.length;
@@ -140,8 +142,8 @@ export default function Test() {
       grossWpm: Math.max(0, grossWpm),
       realSpeed: Math.max(0, realSpeed),
       totalKeystrokes,
-      typedText,
-      targetText
+      typedText: cleanTypedText,
+      targetText: attemptedTargetText
     });
     
     navigate('/report');
@@ -175,27 +177,39 @@ export default function Test() {
   
   // Track words split strictly by space for highlighting active word position
   const cleanTypedTextLive = typedText.replace(/\r?\n/g, ' ');
-  const typedWordsCount = typedText === '' ? 0 : (cleanTypedTextLive.endsWith(' ') ? cleanTypedTextLive.split(' ').length : Math.max(0, cleanTypedTextLive.split(' ').length - 1));
+  const typedWordsCount = cleanTypedTextLive.split(' ').length - 1;
 
   // Line-by-line scrolling logic
   useEffect(() => {
-    if (displayContainerRef.current && lineOffsets.length > 0) {
-      const spans = displayContainerRef.current.querySelectorAll('span');
+    if (displayContainerRef.current) {
+      const spans = Array.from(displayContainerRef.current.querySelectorAll('span'));
       const activeWordSpan = spans[typedWordsCount];
+      
       if (activeWordSpan) {
-        const activeWordOffsetTop = activeWordSpan.offsetTop;
-        const activeLineIndex = lineOffsets.indexOf(activeWordOffsetTop);
+        // Find all unique offsetTops up to the current active span
+        const uniqueOffsets = new Set();
+        for (let i = 0; i <= typedWordsCount; i++) {
+          if (spans[i] && spans[i].offsetTop !== undefined) {
+            uniqueOffsets.add(spans[i].offsetTop);
+          }
+        }
+        
+        const activeLineIndex = uniqueOffsets.size - 1; // 0-indexed
         
         // Scroll one line when the 3rd line (index 2) is reached, and one line for each line after
         if (activeLineIndex >= 2) {
-          const lineHeight = lineOffsets[1] - lineOffsets[0] || 20; // fallback 20px
+          const offsetsArray = Array.from(uniqueOffsets).sort((a,b) => a-b);
+          let lineHeight = 24; // fallback line height
+          if (offsetsArray.length >= 2) {
+            lineHeight = offsetsArray[1] - offsetsArray[0];
+          }
           displayContainerRef.current.scrollTop = (activeLineIndex - 1) * lineHeight;
         } else {
           displayContainerRef.current.scrollTop = 0;
         }
       }
     }
-  }, [typedWordsCount, lineOffsets]);
+  }, [typedWordsCount]);
 
   // Live speed calculations
   const elapsedMinutes = timeElapsed > 0 ? timeElapsed / 60 : 0;
@@ -235,22 +249,6 @@ export default function Test() {
           </div>
         </div>
         <div className="user-info-area">
-          {isTestActive && (
-            <div className="current-speed-area">
-              <button 
-                onClick={() => setShowSpeed(!showSpeed)} 
-                className="hide-speed-btn"
-              >
-                {showSpeed ? 'Hide Speed' : 'Show Speed'}
-              </button>
-              {showSpeed && (
-                <span className="speed-stats">
-                  Speed: {currentGrossWpm} WPM (Net: {currentRealWpm})
-                </span>
-              )}
-            </div>
-          )}
-
           <div className="time-left">Time Left : {formatTime(timeLeft)}</div>
           {isTestActive && (
             <button 
@@ -303,6 +301,23 @@ export default function Test() {
             placeholder={isPaused ? "Paused. Click Resume to continue..." : ""}
             spellCheck="false"
           />
+
+          {isTestActive && (
+            <div className="current-speed-area" style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button 
+                onClick={() => setShowSpeed(!showSpeed)} 
+                className="hide-speed-btn"
+                style={{ padding: '5px 10px', fontSize: '0.9rem', cursor: 'pointer' }}
+              >
+                {showSpeed ? 'Hide Live Speed' : 'Show Live Speed'}
+              </button>
+              {showSpeed && (
+                <span className="speed-stats" style={{ fontWeight: 'bold', color: '#1a4e7e' }}>
+                  Speed: {currentGrossWpm} WPM (Net: {currentRealWpm})
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="submit-area">
              <button onClick={handleSubmitEarly} className="submit-test-btn">Submit</button>
