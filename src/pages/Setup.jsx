@@ -7,7 +7,7 @@ export default function Setup() {
   const { setTestConfig } = useTest();
   const [autoFullscreen, setAutoFullscreen] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    name: 'Shiro Musay Sahay',
     practiceNo: '',
     timerMinutes: '1',
     timerSeconds: '0',

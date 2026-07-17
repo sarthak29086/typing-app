@@ -18,7 +18,9 @@ export const TestProvider = ({ children }) => {
     additions: 0,
     grossWpm: 0,
     realSpeed: 0,
-    totalKeystrokes: 0
+    totalKeystrokes: 0,
+    typedText: '',
+    targetText: ''
   });
 
   return (

@@ -7,8 +7,10 @@ export default function Test() {
   const { testConfig, setTestResults } = useTest();
   
   const [timeLeft, setTimeLeft] = useState(testConfig.timerSeconds || 60);
+  const [timeElapsed, setTimeElapsed] = useState(0);
   const [isTestActive, setIsTestActive] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [showSpeed, setShowSpeed] = useState(true);
   const [typedText, setTypedText] = useState('');
   const [targetText, setTargetText] = useState(testConfig.paragraph || 'Please go back and configure the test.');
   
@@ -30,6 +32,7 @@ export default function Test() {
     if (isTestActive && timeLeft > 0 && !isPaused) {
       const timer = setInterval(() => {
         setTimeLeft(prev => prev - 1);
+        setTimeElapsed(prev => prev + 1);
       }, 1000);
       return () => clearInterval(timer);
     } else if (isTestActive && timeLeft === 0) {
@@ -114,24 +117,27 @@ export default function Test() {
     // Perform robust alignment to count and categorize errors
     const alignment = alignWords(originalWords.slice(0, typedWords.length), typedWords);
     
-    const timeTakenMinutes = testConfig.timerSeconds / 60;
+    const timeTakenSeconds = timeElapsed === 0 ? 1 : timeElapsed;
+    const timeTakenMinutes = timeTakenSeconds / 60;
     const totalKeystrokes = typedText.length;
     
-    // Gross WPM: (Total Keystrokes / 5) / (Total Time in minutes)
+    // Gross WPM: (Total Keystrokes / 5) / (Time Taken in minutes)
     const grossWpm = (totalKeystrokes / 5) / timeTakenMinutes;
     
-    // Real Speed: ((Total Keystrokes - 2 * Errors) / 5) / (Total Time in minutes)
-    const realSpeed = ((totalKeystrokes - 2 * alignment.totalErrors) / 5) / timeTakenMinutes;
+    // Real Speed: ((Total Keystrokes / 5) - 2 * Errors) / (Time Taken in minutes)
+    const realSpeed = ((totalKeystrokes / 5) - (2 * alignment.totalErrors)) / timeTakenMinutes;
 
     setTestResults({
-      timeTakenSeconds: testConfig.timerSeconds,
+      timeTakenSeconds,
       errors: alignment.totalErrors,
       misspellings: alignment.misspellings,
       omissions: alignment.omissions,
       additions: alignment.additions,
       grossWpm: Math.max(0, grossWpm),
       realSpeed: Math.max(0, realSpeed),
-      totalKeystrokes
+      totalKeystrokes,
+      typedText,
+      targetText
     });
     
     navigate('/report');
@@ -184,6 +190,20 @@ export default function Test() {
     }
   }, [typedWordsCount, lineOffsets]);
 
+  // Live speed calculations
+  const elapsedMinutes = timeElapsed > 0 ? timeElapsed / 60 : 0;
+  let currentGrossWpm = 0;
+  let currentRealWpm = 0;
+
+  if (elapsedMinutes > 0) {
+    const currentTypedWords = typedText.trim().split(/\s+/).filter(w => w.length > 0);
+    const currentOriginalWords = targetText.trim().split(/\s+/).slice(0, currentTypedWords.length);
+    const liveAlignment = alignWords(currentOriginalWords, currentTypedWords);
+    
+    currentGrossWpm = Math.max(0, Math.round((typedText.length / 5) / elapsedMinutes));
+    currentRealWpm = Math.max(0, Math.round(((typedText.length / 5) - (2 * liveAlignment.totalErrors)) / elapsedMinutes));
+  }
+
   return (
     <div className="test-layout watermarked-bg">
       <header className="test-header">
@@ -206,6 +226,22 @@ export default function Test() {
           </div>
         </div>
         <div className="user-info-area">
+          {isTestActive && (
+            <div className="current-speed-area">
+              <button 
+                onClick={() => setShowSpeed(!showSpeed)} 
+                className="hide-speed-btn"
+              >
+                {showSpeed ? 'Hide Speed' : 'Show Speed'}
+              </button>
+              {showSpeed && (
+                <span className="speed-stats">
+                  Speed: {currentGrossWpm} WPM (Net: {currentRealWpm})
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="time-left">Time Left : {formatTime(timeLeft)}</div>
           {isTestActive && (
             <button 

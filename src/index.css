@@ -17,8 +17,8 @@ body {
   background-color: #f5f8fa;
 }
 
-/* --- Setup & Report Pages --- */
-.setup-container, .report-container {
+/* --- Setup & Base Container Pages --- */
+.setup-container {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -26,7 +26,7 @@ body {
   padding: 20px;
 }
 
-.setup-card, .report-card {
+.setup-card {
   background: white;
   padding: 30px;
   border-radius: 8px;
@@ -67,13 +67,111 @@ body {
   background: #2563eb;
 }
 
-/* --- Report Specific --- */
-.report-header {
+/* --- 2-Column Report Page Layout --- */
+.report-page-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 40px 20px;
+  background-color: #f1f5f9;
+}
+
+.report-flex-wrapper {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.report-left-panel, .report-right-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+.report-card-updated {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.prompt-card {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.prompt-header-box {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 10px;
+}
+
+.prompt-header-box h2 {
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.copy-prompt-btn {
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.copy-prompt-btn:hover {
+  background: #059669;
+}
+
+.prompt-textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 420px;
+  padding: 12px;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #f8fafc;
+  resize: none;
+  outline: none;
+  color: #334155;
+}
+
+/* --- Report Specific Sub-Metrics --- */
+.report-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-bottom: 20px;
-  padding-bottom: 10px;
+  padding-bottom: 15px;
   border-bottom: 1px solid #eee;
+}
+
+.report-stat {
+  font-size: 14px;
+  color: #475569;
 }
 
 .report-metrics {
@@ -89,12 +187,16 @@ body {
   border-radius: 6px;
   text-align: center;
   border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .metric-title {
-  font-size: 14px;
+  font-size: 13px;
   color: #64748b;
   margin-bottom: 5px;
+  font-weight: bold;
 }
 
 .metric-value {
@@ -104,13 +206,15 @@ body {
 }
 
 .metric-desc {
-  font-size: 12px;
+  font-size: 11px;
   color: #94a3b8;
   margin-top: 5px;
 }
 
 .error-analysis h2 {
-  margin-bottom: 15px;
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #334155;
 }
 
 /* --- Test Page Layout --- */
@@ -211,6 +315,37 @@ body {
   display: flex;
   align-items: center;
   gap: 15px;
+}
+
+/* Speed display on test page */
+.current-speed-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+
+.hide-speed-btn {
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.hide-speed-btn:hover {
+  background: #cbd5e1;
+}
+
+.speed-stats {
+  font-size: 11px;
+  font-weight: bold;
+  color: #0f172a;
 }
 
 .time-left {
