@@ -39,24 +39,18 @@ export default function Report() {
   const copyPromptText = `Evaluation Rules:
 - Gross WPM: (Total Keystrokes / 5) / Time (min)
 - Real Speed (Net WPM): ((Gross Keystrokes / 5) - Penalties) / Time (min)
-- Penalties: 1 error = 1 penalty (which subtracts 1 from Gross WPM)
+- Penalties:
+  * Wrong word spelling is one error
+  * Extra word added is one error
+  * Less word typed is one error
+  * Punctuation is one error
+  * Upper/lower case is one error
+  * Space disparity is one error
 
 Test Performance:
 - Name: ${testConfig.name}
 - Test No: ${testConfig.practiceNo}
 - Time Taken: ${timeTakenStr}
-- Gross WPM: ${Math.round(testResults.grossWpm)}
-- Real Speed (Net WPM): ${Math.round(testResults.realSpeed)}
-- Total Keystrokes: ${testResults.totalKeystrokes}
-- Total Penalties/Errors: ${testResults.errors}
-
-Penalty Breakdown:
-  * Wrong Word Spelling: ${testResults.wrongSpelling}
-  * Extra Word Added: ${testResults.extraWord}
-  * Less Word Typed: ${testResults.lessWord}
-  * Punctuation Error: ${testResults.punctuationError}
-  * Upper/Lower Case Error: ${testResults.caseError}
-  * Space Disparity: ${testResults.spaceDisparity}
 
 Original Paragraph:
 -------------------
