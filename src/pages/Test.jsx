@@ -155,26 +155,35 @@ export default function Test() {
     // Normalize newlines to spaces
     const cleanTypedText = typedText.replace(/\r?\n/g, ' ').trim();
     
-    // Always use the BASE paragraph (testConfig.paragraph) as ground truth for comparison.
-    // targetText is extended for display purposes and should NOT be used here.
-    const baseParagraph = testConfig.paragraph.replace(/\r?\n/g, ' ').trim();
+    // Always use the BASE paragraph (testConfig.paragraph) as ground truth.
+    const baseParagraph = testConfig.paragraph.replace(/\s+/g, ' ').trim();
     
     const typedWords = cleanTypedText.split(/\s+/).filter(w => w.length > 0);
     const baseWords = baseParagraph.split(/\s+/).filter(w => w.length > 0);
     
-    // Build the repeated original words array to match the length the user typed into
-    let originalWords = [];
-    while (originalWords.length < typedWords.length) {
-      originalWords = originalWords.concat(baseWords);
-    }
-    // Trim to exactly what the user typed (word count)
-    originalWords = originalWords.slice(0, typedWords.length);
+    // Split typed words into:
+    // (a) words that fall within the original paragraph's word range
+    // (b) words typed BEYOND the original paragraph's end
+    const typedWithinOriginal = typedWords.slice(0, baseWords.length);
+    const typedBeyondOriginal = typedWords.slice(baseWords.length);
     
-    // Perform alignment against the proper (non-repeated-contaminated) original
-    const alignment = alignWords(originalWords, typedWords);
+    // For the original to compare against: same length as typedWithinOriginal
+    const originalForComparison = baseWords.slice(0, typedWithinOriginal.length);
     
-    // For the copy prompt: show the base paragraph up to max typed word index (no repetition)
-    const attemptedTargetText = baseWords.slice(0, Math.min(typedWords.length, baseWords.length)).join(' ');
+    // Perform alignment only against words within the original
+    const alignment = alignWords(originalForComparison, typedWithinOriginal);
+    
+    // Words typed beyond the original end are all extra word errors
+    const beyondErrors = typedBeyondOriginal.filter(w => w !== '').length;
+    const beyondDetails = typedBeyondOriginal.filter(w => w !== '').map(w => ({ expected: '-', typed: w }));
+    
+    // Merge beyond-original extras into alignment result
+    alignment.extraWord += beyondErrors;
+    alignment.extraWordDetails = alignment.extraWordDetails.concat(beyondDetails);
+    alignment.totalErrors += beyondErrors;
+    
+    // For the copy prompt: show the original paragraph up to what the user covered (capped at its own length)
+    const attemptedTargetText = originalForComparison.join(' ');
     
     const timeTakenSeconds = timeElapsed === 0 ? 1 : timeElapsed;
     const timeTakenMinutes = timeTakenSeconds / 60;
