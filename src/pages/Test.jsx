@@ -124,8 +124,8 @@ export default function Test() {
     // Gross WPM: (Total Keystrokes / 5) / (Time Taken in minutes)
     const grossWpm = (totalKeystrokes / 5) / timeTakenMinutes;
     
-    // Real Speed: ((Total Keystrokes / 5) - 2 * Errors) / (Time Taken in minutes)
-    const realSpeed = ((totalKeystrokes / 5) - (2 * alignment.totalErrors)) / timeTakenMinutes;
+    // Real Speed: ((Total Keystrokes - 2 * Errors) / 5) / (Time Taken in minutes)
+    const realSpeed = ((totalKeystrokes - (2 * alignment.totalErrors)) / 5) / timeTakenMinutes;
 
     setTestResults({
       timeTakenSeconds,
@@ -201,7 +201,7 @@ export default function Test() {
     const liveAlignment = alignWords(currentOriginalWords, currentTypedWords);
     
     currentGrossWpm = Math.max(0, Math.round((typedText.length / 5) / elapsedMinutes));
-    currentRealWpm = Math.max(0, Math.round(((typedText.length / 5) - (2 * liveAlignment.totalErrors)) / elapsedMinutes));
+    currentRealWpm = Math.max(0, Math.round(((typedText.length - (2 * liveAlignment.totalErrors)) / 5) / elapsedMinutes));
   }
 
   return (

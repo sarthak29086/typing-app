@@ -24,8 +24,8 @@ export default function Report() {
   // Build the copy prompt string
   const copyPromptText = `Evaluation Rules:
 - Gross WPM: (Total Keystrokes / 5) / Time (min)
-- Real Speed (Net WPM): ((Total Keystrokes / 5) - 2 * Errors) / Time (min)
-- Errors are subtracted from words (1 error = 2 words penalty)
+- Real Speed (Net WPM): ((Total Keystrokes - 2 * Errors) / 5) / Time (min)
+- Errors are subtracted from keystrokes (1 error = 2 keystrokes penalty)
 
 Test Performance:
 - Name: ${testConfig.name}
@@ -81,7 +81,7 @@ ${testResults.typedText}`;
               <div className="metric-box">
                 <div className="metric-title">Real Speed</div>
                 <div className="metric-value">{Math.round(testResults.realSpeed)}</div>
-                <div className="metric-desc">Words/min - (2 * Errors / Time)</div>
+                <div className="metric-desc">((Keystrokes - 2 * Errors) / 5) / Time</div>
               </div>
               <div className="metric-box">
                 <div className="metric-title">Total Errors</div>
