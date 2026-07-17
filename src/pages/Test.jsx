@@ -16,7 +16,7 @@ export default function Test() {
   const displayContainerRef = useRef(null);
   const activeWordRef = useRef(null);
   
-  const [lastOffsetTop, setLastOffsetTop] = useState(0);
+  const [lineOffsets, setLineOffsets] = useState([]);
 
   // Focus input on mount
   useEffect(() => {
@@ -36,6 +36,22 @@ export default function Test() {
       endTest();
     }
   }, [isTestActive, timeLeft, isPaused]);
+
+  // Compute unique line vertical offsets on targetText change
+  useEffect(() => {
+    if (displayContainerRef.current) {
+      const spans = displayContainerRef.current.querySelectorAll('span');
+      const offsets = [];
+      spans.forEach(span => {
+        const top = span.offsetTop;
+        if (top !== undefined && !offsets.includes(top)) {
+          offsets.push(top);
+        }
+      });
+      offsets.sort((a, b) => a - b);
+      setLineOffsets(offsets);
+    }
+  }, [targetText]);
 
   const alignWords = (original, typed) => {
     const dp = Array(original.length + 1).fill(null).map(() => Array(typed.length + 1).fill(0));
@@ -148,19 +164,25 @@ export default function Test() {
   const targetWords = targetText.split(' ');
   const typedWordsCount = typedText === '' ? 0 : (typedText.endsWith(' ') ? typedText.trim().split(/\s+/).length : Math.max(0, typedText.trim().split(/\s+/).length - 1));
 
-  // Auto-scroll logic
+  // Line-by-line scrolling logic
   useEffect(() => {
-    if (activeWordRef.current && displayContainerRef.current) {
-      const currentOffsetTop = activeWordRef.current.offsetTop;
-      if (currentOffsetTop > lastOffsetTop + 10) {
-        displayContainerRef.current.scrollTop = currentOffsetTop - 20; 
-        setLastOffsetTop(currentOffsetTop);
-      } else if (currentOffsetTop < lastOffsetTop - 10) {
-        displayContainerRef.current.scrollTop = currentOffsetTop - 20; 
-        setLastOffsetTop(currentOffsetTop);
+    if (displayContainerRef.current && lineOffsets.length > 0) {
+      const spans = displayContainerRef.current.querySelectorAll('span');
+      const activeWordSpan = spans[typedWordsCount];
+      if (activeWordSpan) {
+        const activeWordOffsetTop = activeWordSpan.offsetTop;
+        const activeLineIndex = lineOffsets.indexOf(activeWordOffsetTop);
+        
+        // Scroll one line when the 3rd line (index 2) is reached, and one line for each line after
+        if (activeLineIndex >= 2) {
+          const lineHeight = lineOffsets[1] - lineOffsets[0] || 20; // fallback 20px
+          displayContainerRef.current.scrollTop = (activeLineIndex - 1) * lineHeight;
+        } else {
+          displayContainerRef.current.scrollTop = 0;
+        }
       }
     }
-  }, [typedWordsCount, lastOffsetTop]);
+  }, [typedWordsCount, lineOffsets]);
 
   return (
     <div className="test-layout watermarked-bg">

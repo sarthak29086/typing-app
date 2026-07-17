@@ -313,6 +313,7 @@ body {
   scroll-behavior: smooth;
   font-family: Arial, sans-serif;
   user-select: none;
+  position: relative; /* Added relative positioning for accurate offsetTop measurements */
 }
 
 /* Moving grey tracker removed as requested - transparent background */
