@@ -56,145 +56,119 @@ export default function Test() {
     }
   }, [targetText]);
 
+  // alignWords: standard edit distance (used for live speed estimate)
   const alignWords = (original, typed) => {
-    const dp = Array(original.length + 1).fill(null).map(() => Array(typed.length + 1).fill(0));
-    
-    for (let i = 0; i <= original.length; i++) dp[i][0] = i;
-    for (let j = 0; j <= typed.length; j++) dp[0][j] = j;
-    
-    for (let i = 1; i <= original.length; i++) {
-      for (let j = 1; j <= typed.length; j++) {
-        if (original[i-1] === typed[j-1]) {
-          dp[i][j] = dp[i-1][j-1];
-        } else {
-          dp[i][j] = Math.min(
-            dp[i-1][j] + 1,    // omission
-            dp[i][j-1] + 1,    // addition
-            dp[i-1][j-1] + 1   // substitution
-          );
-        }
+    const O = original.length, T = typed.length;
+    const dp = Array(O + 1).fill(null).map(() => Array(T + 1).fill(0));
+    for (let i = 0; i <= O; i++) dp[i][0] = i;
+    for (let j = 0; j <= T; j++) dp[0][j] = j;
+    for (let i = 1; i <= O; i++) {
+      for (let j = 1; j <= T; j++) {
+        if (original[i-1] === typed[j-1]) dp[i][j] = dp[i-1][j-1];
+        else dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + 1);
       }
     }
-    
-    let i = original.length;
-    let j = typed.length;
-    
-    let wrongSpelling = 0;
-    let extraWord = 0;
-    let lessWord = 0;
-    let punctuationError = 0;
-    let caseError = 0;
-    let spaceDisparity = 0;
-
-    let wrongSpellingDetails = [];
-    let extraWordDetails = [];
-    let lessWordDetails = [];
-    let punctuationErrorDetails = [];
-    let caseErrorDetails = [];
-    let spaceDisparityDetails = [];
-    
+    let i = O, j = T;
+    let wrongSpelling = 0, extraWord = 0, lessWord = 0, punctuationError = 0, caseError = 0, spaceDisparity = 0;
+    let wrongSpellingDetails = [], extraWordDetails = [], lessWordDetails = [], punctuationErrorDetails = [], caseErrorDetails = [], spaceDisparityDetails = [];
     while (i > 0 || j > 0) {
-      if (i > 0 && j > 0 && original[i-1] === typed[j-1]) {
-        i--;
-        j--;
-      } else {
+      if (i > 0 && j > 0 && original[i-1] === typed[j-1]) { i--; j--; }
+      else {
         const omitScore = i > 0 ? dp[i-1][j] : Infinity;
         const addScore = j > 0 ? dp[i][j-1] : Infinity;
         const subScore = (i > 0 && j > 0) ? dp[i-1][j-1] : Infinity;
-        
         const minScore = Math.min(omitScore, addScore, subScore);
         if (minScore === subScore) {
-          const orig = original[i-1];
-          const typ = typed[j-1];
+          const orig = original[i-1], typ = typed[j-1];
           const origClean = orig.replace(/[.,/#!$%^&*;:{}=\-_`~()'"?]/g, "");
           const typClean = typ.replace(/[.,/#!$%^&*;:{}=\-_`~()'"?]/g, "");
-          
-          if (orig.toLowerCase() === typ.toLowerCase()) {
-            caseError++;
-            caseErrorDetails.unshift({ expected: orig, typed: typ });
-          } else if (origClean === typClean) {
-            punctuationError++;
-            punctuationErrorDetails.unshift({ expected: orig, typed: typ });
-          } else if (origClean.toLowerCase() === typClean.toLowerCase()) {
-            caseError++;
-            punctuationError++;
-            caseErrorDetails.unshift({ expected: orig, typed: typ });
-            punctuationErrorDetails.unshift({ expected: orig, typed: typ });
-          } else {
-            wrongSpelling++;
-            wrongSpellingDetails.unshift({ expected: orig, typed: typ });
-          }
-          i--;
-          j--;
-        } else if (minScore === omitScore) {
-          lessWord++;
-          lessWordDetails.unshift({ expected: original[i-1], typed: '-' });
-          i--;
-        } else {
-          const typ = typed[j-1];
-          if (typ === "") {
-            spaceDisparity++;
-            spaceDisparityDetails.unshift({ expected: '-', typed: '(extra space)' });
-          } else {
-            extraWord++;
-            extraWordDetails.unshift({ expected: '-', typed: typ });
-          }
-          j--;
-        }
+          if (orig.toLowerCase() === typ.toLowerCase()) { caseError++; caseErrorDetails.unshift({ expected: orig, typed: typ }); }
+          else if (origClean === typClean) { punctuationError++; punctuationErrorDetails.unshift({ expected: orig, typed: typ }); }
+          else if (origClean.toLowerCase() === typClean.toLowerCase()) { caseError++; punctuationError++; caseErrorDetails.unshift({ expected: orig, typed: typ }); punctuationErrorDetails.unshift({ expected: orig, typed: typ }); }
+          else { wrongSpelling++; wrongSpellingDetails.unshift({ expected: orig, typed: typ }); }
+          i--; j--;
+        } else if (minScore === omitScore) { lessWord++; lessWordDetails.unshift({ expected: original[i-1], typed: '-' }); i--; }
+        else { const typ = typed[j-1]; if (typ === "") { spaceDisparity++; spaceDisparityDetails.unshift({ expected: '-', typed: '(extra space)' }); } else { extraWord++; extraWordDetails.unshift({ expected: '-', typed: typ }); } j--; }
       }
     }
-    
     const totalErrors = wrongSpelling + extraWord + lessWord + punctuationError + caseError + spaceDisparity;
-    return { 
-      wrongSpelling, extraWord, lessWord, punctuationError, caseError, spaceDisparity, totalErrors,
-      wrongSpellingDetails, extraWordDetails, lessWordDetails, punctuationErrorDetails, caseErrorDetails, spaceDisparityDetails
-    };
+    return { wrongSpelling, extraWord, lessWord, punctuationError, caseError, spaceDisparity, totalErrors, wrongSpellingDetails, extraWordDetails, lessWordDetails, punctuationErrorDetails, caseErrorDetails, spaceDisparityDetails };
+  };
+
+  // alignWordsSemiGlobal: finds exactly how many original words were covered by the typed text.
+  // The suffix of original is FREE (unpenalized), so we find the natural alignment endpoint.
+  const alignWordsSemiGlobal = (original, typed) => {
+    const O = original.length, T = typed.length;
+    const dp = Array(O + 1).fill(null).map(() => Array(T + 1).fill(0));
+    for (let i = 0; i <= O; i++) dp[i][0] = i;
+    for (let j = 0; j <= T; j++) dp[0][j] = j;
+    for (let i = 1; i <= O; i++) {
+      for (let j = 1; j <= T; j++) {
+        if (original[i-1] === typed[j-1]) dp[i][j] = dp[i-1][j-1];
+        else dp[i][j] = Math.min(dp[i-1][j] + 1, dp[i][j-1] + 1, dp[i-1][j-1] + 1);
+      }
+    }
+
+    // Find the first i where dp[i][T] is minimized — this is how far into original the typed text reached
+    let minCost = Infinity, bestI = O;
+    for (let i = 0; i <= O; i++) {
+      if (dp[i][T] < minCost) { minCost = dp[i][T]; bestI = i; }
+    }
+
+    // Traceback from (bestI, T) — categorize all errors within the covered range
+    let i = bestI, j = T;
+    let wrongSpelling = 0, extraWord = 0, lessWord = 0, punctuationError = 0, caseError = 0, spaceDisparity = 0;
+    let wrongSpellingDetails = [], extraWordDetails = [], lessWordDetails = [], punctuationErrorDetails = [], caseErrorDetails = [], spaceDisparityDetails = [];
+    while (i > 0 || j > 0) {
+      if (i > 0 && j > 0 && original[i-1] === typed[j-1]) { i--; j--; }
+      else {
+        const omitScore = i > 0 ? dp[i-1][j] : Infinity;
+        const addScore = j > 0 ? dp[i][j-1] : Infinity;
+        const subScore = (i > 0 && j > 0) ? dp[i-1][j-1] : Infinity;
+        const minScore = Math.min(omitScore, addScore, subScore);
+        if (minScore === subScore) {
+          const orig = original[i-1], typ = typed[j-1];
+          const origClean = orig.replace(/[.,/#!$%^&*;:{}=\-_`~()'"?]/g, "");
+          const typClean = typ.replace(/[.,/#!$%^&*;:{}=\-_`~()'"?]/g, "");
+          if (orig.toLowerCase() === typ.toLowerCase()) { caseError++; caseErrorDetails.unshift({ expected: orig, typed: typ }); }
+          else if (origClean === typClean) { punctuationError++; punctuationErrorDetails.unshift({ expected: orig, typed: typ }); }
+          else if (origClean.toLowerCase() === typClean.toLowerCase()) { caseError++; punctuationError++; caseErrorDetails.unshift({ expected: orig, typed: typ }); punctuationErrorDetails.unshift({ expected: orig, typed: typ }); }
+          else { wrongSpelling++; wrongSpellingDetails.unshift({ expected: orig, typed: typ }); }
+          i--; j--;
+        } else if (minScore === omitScore) { lessWord++; lessWordDetails.unshift({ expected: original[i-1], typed: '-' }); i--; }
+        else { const typ = typed[j-1]; if (typ === "") { spaceDisparity++; spaceDisparityDetails.unshift({ expected: '-', typed: '(extra space)' }); } else { extraWord++; extraWordDetails.unshift({ expected: '-', typed: typ }); } j--; }
+      }
+    }
+    const totalErrors = wrongSpelling + extraWord + lessWord + punctuationError + caseError + spaceDisparity;
+    return { wrongSpelling, extraWord, lessWord, punctuationError, caseError, spaceDisparity, totalErrors, wrongSpellingDetails, extraWordDetails, lessWordDetails, punctuationErrorDetails, caseErrorDetails, spaceDisparityDetails, originalWordsCovered: bestI };
   };
 
   const endTest = () => {
-    // Normalize newlines to spaces
     const cleanTypedText = typedText.replace(/\r?\n/g, ' ').trim();
-    
-    // Always use the BASE paragraph (testConfig.paragraph) as ground truth.
     const baseParagraph = testConfig.paragraph.replace(/\s+/g, ' ').trim();
-    
+
     const typedWords = cleanTypedText.split(/\s+/).filter(w => w.length > 0);
     const baseWords = baseParagraph.split(/\s+/).filter(w => w.length > 0);
-    
-    // Split typed words into:
-    // (a) words that fall within the original paragraph's word range
-    // (b) words typed BEYOND the original paragraph's end
-    const typedWithinOriginal = typedWords.slice(0, baseWords.length);
-    const typedBeyondOriginal = typedWords.slice(baseWords.length);
-    
-    // For the original to compare against: same length as typedWithinOriginal
-    const originalForComparison = baseWords.slice(0, typedWithinOriginal.length);
-    
-    // Perform alignment only against words within the original
-    const alignment = alignWords(originalForComparison, typedWithinOriginal);
-    
-    // Words typed beyond the original end are all extra word errors
-    const beyondErrors = typedBeyondOriginal.filter(w => w !== '').length;
-    const beyondDetails = typedBeyondOriginal.filter(w => w !== '').map(w => ({ expected: '-', typed: w }));
-    
-    // Merge beyond-original extras into alignment result
-    alignment.extraWord += beyondErrors;
-    alignment.extraWordDetails = alignment.extraWordDetails.concat(beyondDetails);
-    alignment.totalErrors += beyondErrors;
-    
-    // For the copy prompt: always show the FULL original paragraph.
-    // Slicing by typed word count is wrong because omissions/substitutions shift alignment indices,
-    // causing the original to appear shorter than what the user actually covered.
-    const attemptedTargetText = baseParagraph;
-    
+
+    // Build repeated original — enough to cover typed + generous buffer for omissions
+    const buffer = 60;
+    let originalExtended = [];
+    while (originalExtended.length < typedWords.length + buffer) {
+      originalExtended = originalExtended.concat(baseWords);
+    }
+
+    // Run semi-global alignment: finds exactly how far into originalExtended the typed text reached
+    const alignment = alignWordsSemiGlobal(originalExtended, typedWords);
+    const { originalWordsCovered } = alignment;
+
+    // Original shown in copy prompt: exactly the portion of original that corresponds to what was typed
+    // For looping: if originalWordsCovered > baseWords.length, it includes repeated content naturally
+    const attemptedTargetText = originalExtended.slice(0, originalWordsCovered).join(' ');
+
     const timeTakenSeconds = timeElapsed === 0 ? 1 : timeElapsed;
     const timeTakenMinutes = timeTakenSeconds / 60;
     const totalKeystrokes = typedText.length;
-    
-    // Gross WPM: (Total Keystrokes / 5) / (Time Taken in minutes)
     const grossWpm = (totalKeystrokes / 5) / timeTakenMinutes;
-    
-    // Real Speed: ((Gross Keystrokes / 5) - Penalties) / Time (in minutes)
     const realSpeed = ((totalKeystrokes / 5) - alignment.totalErrors) / timeTakenMinutes;
 
     setTestResults({
@@ -218,7 +192,7 @@ export default function Test() {
       typedText: cleanTypedText,
       targetText: attemptedTargetText
     });
-    
+
     navigate('/report');
   };
 
