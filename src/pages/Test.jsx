@@ -182,8 +182,10 @@ export default function Test() {
     alignment.extraWordDetails = alignment.extraWordDetails.concat(beyondDetails);
     alignment.totalErrors += beyondErrors;
     
-    // For the copy prompt: show the original paragraph up to what the user covered (capped at its own length)
-    const attemptedTargetText = originalForComparison.join(' ');
+    // For the copy prompt: always show the FULL original paragraph.
+    // Slicing by typed word count is wrong because omissions/substitutions shift alignment indices,
+    // causing the original to appear shorter than what the user actually covered.
+    const attemptedTargetText = baseParagraph;
     
     const timeTakenSeconds = timeElapsed === 0 ? 1 : timeElapsed;
     const timeTakenMinutes = timeTakenSeconds / 60;
