@@ -85,6 +85,13 @@ export default function Test() {
     let punctuationError = 0;
     let caseError = 0;
     let spaceDisparity = 0;
+
+    let wrongSpellingDetails = [];
+    let extraWordDetails = [];
+    let lessWordDetails = [];
+    let punctuationErrorDetails = [];
+    let caseErrorDetails = [];
+    let spaceDisparityDetails = [];
     
     while (i > 0 || j > 0) {
       if (i > 0 && j > 0 && original[i-1] === typed[j-1]) {
@@ -104,22 +111,28 @@ export default function Test() {
           
           if (orig.toLowerCase() === typ.toLowerCase()) {
             caseError++;
+            caseErrorDetails.unshift({ expected: orig, typed: typ });
           } else if (origClean === typClean || origClean.toLowerCase() === typClean.toLowerCase()) {
             punctuationError++;
+            punctuationErrorDetails.unshift({ expected: orig, typed: typ });
           } else {
             wrongSpelling++;
+            wrongSpellingDetails.unshift({ expected: orig, typed: typ });
           }
           i--;
           j--;
         } else if (minScore === omitScore) {
           lessWord++;
+          lessWordDetails.unshift({ expected: original[i-1], typed: '-' });
           i--;
         } else {
           const typ = typed[j-1];
           if (typ === "") {
             spaceDisparity++;
+            spaceDisparityDetails.unshift({ expected: '-', typed: '(extra space)' });
           } else {
             extraWord++;
+            extraWordDetails.unshift({ expected: '-', typed: typ });
           }
           j--;
         }
@@ -127,7 +140,10 @@ export default function Test() {
     }
     
     const totalErrors = wrongSpelling + extraWord + lessWord + punctuationError + caseError + spaceDisparity;
-    return { wrongSpelling, extraWord, lessWord, punctuationError, caseError, spaceDisparity, totalErrors };
+    return { 
+      wrongSpelling, extraWord, lessWord, punctuationError, caseError, spaceDisparity, totalErrors,
+      wrongSpellingDetails, extraWordDetails, lessWordDetails, punctuationErrorDetails, caseErrorDetails, spaceDisparityDetails
+    };
   };
 
   const endTest = () => {
@@ -162,6 +178,12 @@ export default function Test() {
       punctuationError: alignment.punctuationError,
       caseError: alignment.caseError,
       spaceDisparity: alignment.spaceDisparity,
+      wrongSpellingDetails: alignment.wrongSpellingDetails,
+      extraWordDetails: alignment.extraWordDetails,
+      lessWordDetails: alignment.lessWordDetails,
+      punctuationErrorDetails: alignment.punctuationErrorDetails,
+      caseErrorDetails: alignment.caseErrorDetails,
+      spaceDisparityDetails: alignment.spaceDisparityDetails,
       grossWpm: Math.max(0, grossWpm),
       realSpeed: Math.max(0, realSpeed),
       totalKeystrokes,

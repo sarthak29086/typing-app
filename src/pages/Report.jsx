@@ -6,6 +6,20 @@ export default function Report() {
   const navigate = useNavigate();
   const { testConfig, testResults } = useTest();
   const [copied, setCopied] = useState(false);
+  const [activeCategory, setActiveCategory] = useState(null);
+
+  const getDetailsForCategory = (category) => {
+    if (!testResults) return [];
+    switch(category) {
+      case 'wrongSpelling': return testResults.wrongSpellingDetails || [];
+      case 'extraWord': return testResults.extraWordDetails || [];
+      case 'lessWord': return testResults.lessWordDetails || [];
+      case 'punctuationError': return testResults.punctuationErrorDetails || [];
+      case 'caseError': return testResults.caseErrorDetails || [];
+      case 'spaceDisparity': return testResults.spaceDisparityDetails || [];
+      default: return [];
+    }
+  };
 
   if (!testResults || testResults.timeTakenSeconds === 0) {
     return (
@@ -100,32 +114,61 @@ ${testResults.typedText}`;
 
             <div className="error-analysis">
               <h2>Detailed Error Analysis (Penalties)</h2>
-              <div className="report-metrics" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginTop: '15px', gap: '15px' }}>
-                <div className="metric-box" style={{ background: '#fef2f2', borderColor: '#fee2e2' }}>
+              <p style={{ fontSize: '0.9rem', color: '#64748b', marginTop: '-5px', marginBottom: '15px' }}>Click on a category to view specific mistakes.</p>
+              <div className="report-metrics" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
+                <div className="metric-box" style={{ background: '#fef2f2', borderColor: '#fee2e2', cursor: 'pointer' }} onClick={() => setActiveCategory('wrongSpelling')}>
                   <div className="metric-title" style={{ color: '#991b1b' }}>Wrong Spelling</div>
                   <div className="metric-value" style={{ color: '#991b1b' }}>{testResults.wrongSpelling}</div>
                 </div>
-                <div className="metric-box" style={{ background: '#fffbeb', borderColor: '#fef3c7' }}>
+                <div className="metric-box" style={{ background: '#fffbeb', borderColor: '#fef3c7', cursor: 'pointer' }} onClick={() => setActiveCategory('extraWord')}>
                   <div className="metric-title" style={{ color: '#92400e' }}>Extra Word</div>
                   <div className="metric-value" style={{ color: '#92400e' }}>{testResults.extraWord}</div>
                 </div>
-                <div className="metric-box" style={{ background: '#f0fdf4', borderColor: '#dcfce7' }}>
+                <div className="metric-box" style={{ background: '#f0fdf4', borderColor: '#dcfce7', cursor: 'pointer' }} onClick={() => setActiveCategory('lessWord')}>
                   <div className="metric-title" style={{ color: '#166534' }}>Less Word</div>
                   <div className="metric-value" style={{ color: '#166534' }}>{testResults.lessWord}</div>
                 </div>
-                <div className="metric-box" style={{ background: '#eff6ff', borderColor: '#dbeafe' }}>
+                <div className="metric-box" style={{ background: '#eff6ff', borderColor: '#dbeafe', cursor: 'pointer' }} onClick={() => setActiveCategory('punctuationError')}>
                   <div className="metric-title" style={{ color: '#1e40af' }}>Punctuation</div>
                   <div className="metric-value" style={{ color: '#1e40af' }}>{testResults.punctuationError}</div>
                 </div>
-                <div className="metric-box" style={{ background: '#f5f3ff', borderColor: '#ede9fe' }}>
+                <div className="metric-box" style={{ background: '#f5f3ff', borderColor: '#ede9fe', cursor: 'pointer' }} onClick={() => setActiveCategory('caseError')}>
                   <div className="metric-title" style={{ color: '#5b21b6' }}>Case Error</div>
                   <div className="metric-value" style={{ color: '#5b21b6' }}>{testResults.caseError}</div>
                 </div>
-                <div className="metric-box" style={{ background: '#fdf4ff', borderColor: '#fae8ff' }}>
+                <div className="metric-box" style={{ background: '#fdf4ff', borderColor: '#fae8ff', cursor: 'pointer' }} onClick={() => setActiveCategory('spaceDisparity')}>
                   <div className="metric-title" style={{ color: '#86198f' }}>Space Disparity</div>
                   <div className="metric-value" style={{ color: '#86198f' }}>{testResults.spaceDisparity}</div>
                 </div>
               </div>
+
+              {activeCategory && (
+                <div className="mistakes-list" style={{ marginTop: '20px', padding: '15px', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <h3 style={{ margin: 0, color: '#0f172a', fontSize: '1.1rem' }}>
+                      {activeCategory === 'wrongSpelling' && 'Wrong Spelling Mistakes'}
+                      {activeCategory === 'extraWord' && 'Extra Word Mistakes'}
+                      {activeCategory === 'lessWord' && 'Less Word Mistakes'}
+                      {activeCategory === 'punctuationError' && 'Punctuation Mistakes'}
+                      {activeCategory === 'caseError' && 'Case Error Mistakes'}
+                      {activeCategory === 'spaceDisparity' && 'Space Disparity Mistakes'}
+                    </h3>
+                    <button onClick={() => setActiveCategory(null)} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+                  </div>
+                  {getDetailsForCategory(activeCategory).length > 0 ? (
+                    <ul style={{ listStyleType: 'none', padding: 0, margin: 0, maxHeight: '200px', overflowY: 'auto' }}>
+                      {getDetailsForCategory(activeCategory).map((mistake, idx) => (
+                        <li key={idx} style={{ padding: '8px 0', borderBottom: '1px solid #e2e8f0', display: 'flex', gap: '15px' }}>
+                          <span style={{ color: '#16a34a', flex: 1 }}><strong>Expected:</strong> {mistake.expected}</span>
+                          <span style={{ color: '#dc2626', flex: 1 }}><strong>Typed:</strong> {mistake.typed}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p style={{ margin: 0, color: '#64748b' }}>No mistakes in this category.</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div style={{textAlign: 'center', marginTop: '30px'}}>
