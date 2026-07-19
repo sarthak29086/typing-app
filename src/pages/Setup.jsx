@@ -53,7 +53,7 @@ export default function Setup() {
   };
 
   return (
-    <div className="setup-container">
+    <div className="setup-container" style={{ backgroundImage: 'url(/joker.jpg)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="setup-card">
         <h1 style={{marginBottom: '20px', color: '#1a4e7e'}}>Typing Test Setup</h1>
         <form onSubmit={handleSubmit} className="setup-form">
