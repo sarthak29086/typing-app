@@ -12,7 +12,8 @@ export default function Test() {
   const [isPaused, setIsPaused] = useState(false);
   const [showSpeed, setShowSpeed] = useState(true);
   const [typedText, setTypedText] = useState('');
-  const [targetText, setTargetText] = useState(testConfig.paragraph || 'Please go back and configure the test.');
+  // targetText is always the base paragraph — never appended to
+  const targetText = testConfig.paragraph || 'Please go back and configure the test.';
   
   const inputRef = useRef(null);
   const displayContainerRef = useRef(null);
@@ -40,7 +41,7 @@ export default function Test() {
     }
   }, [isTestActive, timeLeft, isPaused]);
 
-  // Compute unique line vertical offsets on targetText change
+  // Compute unique line vertical offsets on mount only (targetText never changes)
   useEffect(() => {
     if (displayContainerRef.current) {
       const spans = displayContainerRef.current.querySelectorAll('span');
@@ -203,11 +204,8 @@ export default function Test() {
     }
     const val = e.target.value;
     setTypedText(val);
-    
-    // Append paragraph if nearing end
-    if (val.length >= targetText.length - 50) {
-      setTargetText(prev => prev + ' ' + testConfig.paragraph);
-    }
+    // No appending: targetText stays as the base paragraph.
+    // Looping is handled via modulo in the display logic.
   };
 
   const handleSubmitEarly = () => {
@@ -221,17 +219,21 @@ export default function Test() {
   };
 
   const targetWords = targetText.split(' ');
-  
-  // Track words split strictly by space for highlighting active word position
-  const cleanTypedTextLive = typedText.replace(/\r?\n/g, ' ');
-  const typedWordsCount = cleanTypedTextLive.split(' ').length - 1;
+  const baseWordCount = targetWords.length;
 
-  // Line-by-line scrolling logic
+  // Raw typed word count (ever-increasing as user types)
+  const cleanTypedTextLive = typedText.replace(/\r?\n/g, ' ');
+  const typedWordsCountRaw = cleanTypedTextLive.split(' ').length - 1;
+
+  // For display: wrap around using modulo so the paragraph loops
+  const typedWordsCount = typedWordsCountRaw % baseWordCount;
+
+  // Line-by-line scrolling logic — uses the modulo-wrapped index
   useEffect(() => {
     if (displayContainerRef.current) {
       const spans = Array.from(displayContainerRef.current.querySelectorAll('span'));
       const activeWordSpan = spans[typedWordsCount];
-      
+
       if (activeWordSpan) {
         // Find all unique offsetTops up to the current active span
         const uniqueOffsets = new Set();
@@ -240,9 +242,9 @@ export default function Test() {
             uniqueOffsets.add(spans[i].offsetTop);
           }
         }
-        
+
         const activeLineIndex = uniqueOffsets.size - 1; // 0-indexed
-        
+
         // Scroll one line when the 3rd line (index 2) is reached, and one line for each line after
         if (activeLineIndex >= 2) {
           const offsetsArray = Array.from(uniqueOffsets).sort((a,b) => a-b);
@@ -254,22 +256,28 @@ export default function Test() {
         } else {
           displayContainerRef.current.scrollTop = 0;
         }
+      } else {
+        // Word index out of range (shouldn't happen with modulo, but safety)
+        displayContainerRef.current.scrollTop = 0;
       }
     }
   }, [typedWordsCount]);
 
-  // Live speed calculations
+  // Live speed calculations — always compare against repeated base paragraph
   const elapsedMinutes = timeElapsed > 0 ? timeElapsed / 60 : 0;
   let currentGrossWpm = 0;
   let currentRealWpm = 0;
 
   if (elapsedMinutes > 0) {
-    const cleanTypedLive = typedText.replace(/\r?\n/g, ' ');
-    const cleanOriginalLive = targetText.replace(/\r?\n/g, ' ');
-    const currentTypedWords = cleanTypedLive.split(' ');
-    const currentOriginalWords = cleanOriginalLive.split(' ').slice(0, currentTypedWords.length);
-    const liveAlignment = alignWords(currentOriginalWords, currentTypedWords);
-    
+    const cleanTypedLive = typedText.replace(/\r?\n/g, ' ').trim();
+    const baseParagraphLive = targetText.replace(/\s+/g, ' ').trim();
+    const currentTypedWords = cleanTypedLive.split(/\s+/).filter(w => w.length > 0);
+    const baseWordsLive = baseParagraphLive.split(/\s+/).filter(w => w.length > 0);
+    // Build repeated original to match typed length for live estimate
+    let liveOriginal = [];
+    while (liveOriginal.length < currentTypedWords.length) liveOriginal = liveOriginal.concat(baseWordsLive);
+    liveOriginal = liveOriginal.slice(0, currentTypedWords.length);
+    const liveAlignment = alignWords(liveOriginal, currentTypedWords);
     currentGrossWpm = Math.max(0, Math.round((typedText.length / 5) / elapsedMinutes));
     currentRealWpm = Math.max(0, Math.round(((typedText.length / 5) - liveAlignment.totalErrors) / elapsedMinutes));
   }
@@ -324,6 +332,7 @@ export default function Test() {
         <div className="test-left-column">
           <div className="text-display-box" ref={displayContainerRef}>
             {targetWords.map((word, index) => {
+              // typedWordsCount is already modulo-wrapped
               const isCurrent = index === typedWordsCount;
               return (
                 <React.Fragment key={index}>
