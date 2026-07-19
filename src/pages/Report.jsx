@@ -89,7 +89,7 @@ ${testResults.typedText}`;
       {testResults.realSpeed > 35 && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 50, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <img src="/fireworks.gif" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} alt="Fireworks" />
-          <img src="/congrats.avif" style={{ zIndex: 51, maxWidth: '400px' }} alt="Congrats" />
+          <img src="/congrats_png.png" style={{ zIndex: 51, maxWidth: '400px' }} alt="Congrats" />
         </div>
       )}
       <h1 style={{ fontSize: '3rem', fontWeight: 'bold', color: speedColor, marginBottom: '20px', textAlign: 'center', zIndex: 10 }}>{speedMessage}</h1>
