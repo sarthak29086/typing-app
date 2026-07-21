@@ -9,31 +9,80 @@ export default function Report() {
   const [activeCategory, setActiveCategory] = useState(null);
   
   const roundedRealSpeed = testResults ? Math.round(testResults.realSpeed) : 0;
-  const hasHighSpeed = roundedRealSpeed >= 35;
-  const [showVideoOverlay, setShowVideoOverlay] = useState(hasHighSpeed);
-  const [fadeVideoOut, setFadeVideoOut] = useState(false);
-  const [showPerfectionOverlay, setShowPerfectionOverlay] = useState(true);
-
-  const videoRef = useRef(null);
-
   const accuracy = (testResults && testResults.grossWpm > 0)
     ? Math.max(0, (testResults.realSpeed / testResults.grossWpm) * 100)
     : 0;
 
-  // Video overlay playback & fade out logic for realSpeed >= 35 (rounded)
+  // Tier classification:
+  // 1. Ultimate Perfection: Speed >= 35 AND Accuracy >= 93%
+  // 2. High Speed Only: Speed >= 35 AND Accuracy < 93%
+  // 3. High Accuracy Only: Speed < 35 AND Accuracy >= 93%
+  const isUltimatePerfection = roundedRealSpeed >= 35 && accuracy >= 93;
+  const isHighSpeedOnly = roundedRealSpeed >= 35 && accuracy < 93;
+  const isHighAccuracyOnly = roundedRealSpeed < 35 && accuracy >= 93;
+
+  // Guts video state (Ultimate Perfection tier)
+  const [showGutsOverlay, setShowGutsOverlay] = useState(false);
+  const [fadeGutsIn, setFadeGutsIn] = useState(false);
+  const [fadeGutsOut, setFadeGutsOut] = useState(false);
+
+  // Zenitsu video state (High Speed Only tier)
+  const [showZenitsuOverlay, setShowZenitsuOverlay] = useState(isHighSpeedOnly);
+  const [fadeZenitsuOut, setFadeZenitsuOut] = useState(false);
+
+  // Perfection (Levi GIF) state (High Accuracy Only tier)
+  const [showPerfectionOverlay, setShowPerfectionOverlay] = useState(isHighAccuracyOnly);
+
+  const zenitsuVideoRef = useRef(null);
+  const gutsVideoRef = useRef(null);
+
+  // Tier 1: Guts video logic — Waits 10 seconds on report page, then fades into Guts video
   useEffect(() => {
-    if (hasHighSpeed && showVideoOverlay) {
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0;
-        videoRef.current.play().catch(err => console.log("Autoplay playback notice:", err));
+    if (isUltimatePerfection) {
+      const waitTimer = setTimeout(() => {
+        setFadeGutsIn(true);
+        setShowGutsOverlay(true);
+      }, 10000); // 10 seconds on report page
+
+      return () => clearTimeout(waitTimer);
+    }
+  }, [isUltimatePerfection]);
+
+  // When Guts video starts playing in DOM
+  useEffect(() => {
+    if (showGutsOverlay && gutsVideoRef.current) {
+      gutsVideoRef.current.currentTime = 0;
+      gutsVideoRef.current.play().catch(err => console.log("Guts video play error:", err));
+    }
+  }, [showGutsOverlay]);
+
+  const handleGutsVideoEnded = () => {
+    setFadeGutsOut(true);
+    setTimeout(() => {
+      setShowGutsOverlay(false);
+      setFadeGutsIn(false);
+      setFadeGutsOut(false);
+    }, 1000);
+  };
+
+  const skipGutsVideo = () => {
+    handleGutsVideoEnded();
+  };
+
+  // Tier 2: Zenitsu video logic for High Speed Only
+  useEffect(() => {
+    if (isHighSpeedOnly && showZenitsuOverlay) {
+      if (zenitsuVideoRef.current) {
+        zenitsuVideoRef.current.currentTime = 0;
+        zenitsuVideoRef.current.play().catch(err => console.log("Autoplay playback notice:", err));
       }
 
       const fadeTimer = setTimeout(() => {
-        setFadeVideoOut(true);
+        setFadeZenitsuOut(true);
       }, 23000); // Start fade out at 23s
 
       const removeTimer = setTimeout(() => {
-        setShowVideoOverlay(false);
+        setShowZenitsuOverlay(false);
       }, 24000); // Fully remove video overlay at 24s
 
       return () => {
@@ -41,30 +90,29 @@ export default function Report() {
         clearTimeout(removeTimer);
       };
     }
-  }, [hasHighSpeed, showVideoOverlay]);
+  }, [isHighSpeedOnly, showZenitsuOverlay]);
 
-  // Backup trigger when video currentTime reaches 24 seconds
-  const handleVideoTimeUpdate = () => {
-    if (videoRef.current && videoRef.current.currentTime >= 24 && !fadeVideoOut) {
-      setFadeVideoOut(true);
-      setTimeout(() => setShowVideoOverlay(false), 1000);
+  const handleZenitsuTimeUpdate = () => {
+    if (zenitsuVideoRef.current && zenitsuVideoRef.current.currentTime >= 24 && !fadeZenitsuOut) {
+      setFadeZenitsuOut(true);
+      setTimeout(() => setShowZenitsuOverlay(false), 1000);
     }
   };
 
-  const skipVideo = () => {
-    setFadeVideoOut(true);
-    setTimeout(() => setShowVideoOverlay(false), 500);
+  const skipZenitsuVideo = () => {
+    setFadeZenitsuOut(true);
+    setTimeout(() => setShowZenitsuOverlay(false), 500);
   };
 
-  // Perfection (Levi GIF) overlay logic — triggers AFTER video overlay completes
+  // Tier 3: Perfection (Levi GIF) overlay logic for High Accuracy Only — 5 seconds
   useEffect(() => {
-    if (accuracy >= 93 && !showVideoOverlay) {
+    if (isHighAccuracyOnly) {
       const timer = setTimeout(() => {
         setShowPerfectionOverlay(false);
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [accuracy, showVideoOverlay]);
+  }, [isHighAccuracyOnly]);
 
   const getDetailsForCategory = (category) => {
     if (!testResults) return [];
@@ -144,8 +192,8 @@ ${testResults.typedText}`;
 
   return (
     <div className="report-page-container">
-      {/* 1. Fullscreen Video Overlay for Real Speed >= 35 */}
-      {showVideoOverlay && (
+      {/* 1. Guts Video Overlay (Tier 1: Ultimate Perfection — speed >= 35 & accuracy >= 93%. Fades in after 10s on report page) */}
+      {showGutsOverlay && (
         <div style={{ 
           position: 'fixed', 
           top: 0, 
@@ -158,19 +206,67 @@ ${testResults.typedText}`;
           justifyContent: 'center', 
           alignItems: 'center',
           transition: 'opacity 1s ease-in-out',
-          opacity: fadeVideoOut ? 0 : 1,
-          pointerEvents: fadeVideoOut ? 'none' : 'auto'
+          opacity: fadeGutsOut ? 0 : (fadeGutsIn ? 1 : 0),
+          pointerEvents: fadeGutsOut ? 'none' : 'auto'
         }}>
           <video
-            ref={videoRef}
-            src="/zenitsu.mp4"
+            ref={gutsVideoRef}
+            src="/guts.mp4"
             autoPlay
             playsInline
-            onTimeUpdate={handleVideoTimeUpdate}
+            onEnded={handleGutsVideoEnded}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
           <button 
-            onClick={skipVideo}
+            onClick={skipGutsVideo}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              color: '#fff',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              zIndex: 10002,
+              backdropFilter: 'blur(4px)'
+            }}
+          >
+            Back to Report ✕
+          </button>
+        </div>
+      )}
+
+      {/* 2. Zenitsu Video Overlay (Tier 2: High Speed Only — speed >= 35 & accuracy < 93%) */}
+      {isHighSpeedOnly && showZenitsuOverlay && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100vw', 
+          height: '100vh', 
+          backgroundColor: '#000', 
+          zIndex: 10000, 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          transition: 'opacity 1s ease-in-out',
+          opacity: fadeZenitsuOut ? 0 : 1,
+          pointerEvents: fadeZenitsuOut ? 'none' : 'auto'
+        }}>
+          <video
+            ref={zenitsuVideoRef}
+            src="/zenitsu.mp4"
+            autoPlay
+            playsInline
+            onTimeUpdate={handleZenitsuTimeUpdate}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          <button 
+            onClick={skipZenitsuVideo}
             style={{
               position: 'absolute',
               top: '20px',
@@ -192,8 +288,8 @@ ${testResults.typedText}`;
         </div>
       )}
 
-      {/* 2. Perfection Overlay (Levi GIF) for Accuracy >= 93% (Shows AFTER Zenitsu video completes) */}
-      {!showVideoOverlay && accuracy >= 93 && showPerfectionOverlay && (
+      {/* 3. Perfection Overlay (Levi GIF) for Tier 3: High Accuracy Only (speed < 35 & accuracy >= 93%) */}
+      {isHighAccuracyOnly && showPerfectionOverlay && (
         <div style={{ 
           position: 'fixed', 
           top: 0, 
@@ -234,8 +330,8 @@ ${testResults.typedText}`;
         </div>
       )}
 
-      {/* 3. Fireworks Background for Real Speed >= 35 */}
-      {roundedRealSpeed >= 35 && (
+      {/* 4. Fireworks Background for High Speed Only */}
+      {isHighSpeedOnly && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 50, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <img src="/fireworks.gif" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} alt="Fireworks" />
           <img src="/congrats_png.png" style={{ zIndex: 51, maxWidth: '400px' }} alt="Congrats" />
@@ -256,7 +352,7 @@ ${testResults.typedText}`;
               <div className="report-stat"><strong>Time Taken:</strong> {timeTakenStr}</div>
             </div>
             
-            <div className="report-metrics">
+            <div className="report-metrics" style={{ gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px' }}>
               <div className="metric-box">
                 <div className="metric-title">Gross WPM</div>
                 <div className="metric-value">{Math.round(testResults.grossWpm)}</div>
@@ -266,6 +362,11 @@ ${testResults.typedText}`;
                 <div className="metric-title">Real Speed</div>
                 <div className="metric-value">{Math.round(testResults.realSpeed)}</div>
                 <div className="metric-desc">((Keystrokes / 5) - Penalties) / Time</div>
+              </div>
+              <div className="metric-box" style={{ background: '#f0fdf4', borderColor: '#bbf7d0' }}>
+                <div className="metric-title" style={{ color: '#15803d' }}>Accuracy</div>
+                <div className="metric-value" style={{ color: '#15803d' }}>{accuracy.toFixed(1)}%</div>
+                <div className="metric-desc" style={{ color: '#16a34a' }}>((Net / Gross) * 100)</div>
               </div>
               <div className="metric-box">
                 <div className="metric-title">Total Penalties</div>
