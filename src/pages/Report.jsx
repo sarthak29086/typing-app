@@ -8,7 +8,8 @@ export default function Report() {
   const [copied, setCopied] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
   
-  const hasHighSpeed = testResults && testResults.realSpeed >= 35;
+  const roundedRealSpeed = testResults ? Math.round(testResults.realSpeed) : 0;
+  const hasHighSpeed = roundedRealSpeed >= 35;
   const [showVideoOverlay, setShowVideoOverlay] = useState(hasHighSpeed);
   const [fadeVideoOut, setFadeVideoOut] = useState(false);
   const [showPerfectionOverlay, setShowPerfectionOverlay] = useState(true);
@@ -19,7 +20,7 @@ export default function Report() {
     ? Math.max(0, (testResults.realSpeed / testResults.grossWpm) * 100)
     : 0;
 
-  // Video overlay 22-second playback & fade out logic for realSpeed >= 35
+  // Video overlay playback & fade out logic for realSpeed >= 35 (rounded)
   useEffect(() => {
     if (hasHighSpeed && showVideoOverlay) {
       if (videoRef.current) {
@@ -29,11 +30,11 @@ export default function Report() {
 
       const fadeTimer = setTimeout(() => {
         setFadeVideoOut(true);
-      }, 21000); // Start fade out at 21s
+      }, 23000); // Start fade out at 23s
 
       const removeTimer = setTimeout(() => {
         setShowVideoOverlay(false);
-      }, 22000); // Fully remove video overlay at 22s
+      }, 24000); // Fully remove video overlay at 24s
 
       return () => {
         clearTimeout(fadeTimer);
@@ -42,9 +43,9 @@ export default function Report() {
     }
   }, [hasHighSpeed, showVideoOverlay]);
 
-  // Backup trigger when video currentTime reaches 22 seconds
+  // Backup trigger when video currentTime reaches 24 seconds
   const handleVideoTimeUpdate = () => {
-    if (videoRef.current && videoRef.current.currentTime >= 22 && !fadeVideoOut) {
+    if (videoRef.current && videoRef.current.currentTime >= 24 && !fadeVideoOut) {
       setFadeVideoOut(true);
       setTimeout(() => setShowVideoOverlay(false), 1000);
     }
@@ -55,15 +56,15 @@ export default function Report() {
     setTimeout(() => setShowVideoOverlay(false), 500);
   };
 
-  // Perfection (Levi GIF) overlay logic — triggers after video overlay completes
+  // Perfection (Levi GIF) overlay logic — runs for 5s (simultaneously over video if high speed)
   useEffect(() => {
-    if (accuracy >= 93 && !showVideoOverlay) {
+    if (accuracy >= 93) {
       const timer = setTimeout(() => {
         setShowPerfectionOverlay(false);
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [accuracy, showVideoOverlay]);
+  }, [accuracy]);
 
   const getDetailsForCategory = (category) => {
     if (!testResults) return [];
@@ -130,10 +131,10 @@ ${testResults.typedText}`;
 
   let speedMessage = "";
   let speedColor = "";
-  if (testResults.realSpeed < 30) {
+  if (roundedRealSpeed < 30) {
     speedMessage = "You can do better!";
     speedColor = "#dc2626"; // red
-  } else if (testResults.realSpeed <= 35) {
+  } else if (roundedRealSpeed < 35) {
     speedMessage = "Good Word! Keep it up!";
     speedColor = "#d97706"; // orange
   } else {
@@ -143,7 +144,7 @@ ${testResults.typedText}`;
 
   return (
     <div className="report-page-container">
-      {/* 1. Fullscreen Video Overlay for Real Speed >= 35 (Plays for 22s then fades out) */}
+      {/* 1. Fullscreen Video Overlay for Real Speed >= 35 */}
       {showVideoOverlay && (
         <div style={{ 
           position: 'fixed', 
@@ -182,7 +183,7 @@ ${testResults.typedText}`;
               cursor: 'pointer',
               fontSize: '14px',
               fontWeight: 'bold',
-              zIndex: 10001,
+              zIndex: 10002,
               backdropFilter: 'blur(4px)'
             }}
           >
@@ -191,17 +192,17 @@ ${testResults.typedText}`;
         </div>
       )}
 
-      {/* 2. Perfection Overlay (Levi GIF) for Accuracy >= 93% */}
-      {!showVideoOverlay && accuracy >= 93 && showPerfectionOverlay && (
+      {/* 2. Perfection Overlay (Levi GIF) for Accuracy >= 93% (Shows simultaneously over video if both trigger) */}
+      {accuracy >= 93 && showPerfectionOverlay && (
         <div style={{ 
           position: 'fixed', 
           top: 0, 
           left: 0, 
           width: '100vw', 
           height: '100vh', 
-          backgroundColor: 'rgba(0, 0, 0, 0.85)', 
+          backgroundColor: showVideoOverlay ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.85)', 
           pointerEvents: 'none', 
-          zIndex: 9999, 
+          zIndex: 10001, 
           display: 'flex', 
           flexDirection: 'column',
           justifyContent: 'center', 
@@ -233,12 +234,14 @@ ${testResults.typedText}`;
         </div>
       )}
 
-      {testResults.realSpeed > 35 && (
+      {/* 3. Fireworks Background for Real Speed >= 35 */}
+      {roundedRealSpeed >= 35 && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 50, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <img src="/fireworks.gif" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} alt="Fireworks" />
           <img src="/congrats_png.png" style={{ zIndex: 51, maxWidth: '400px' }} alt="Congrats" />
         </div>
       )}
+      
       <h1 style={{ fontSize: '3rem', fontWeight: 'bold', color: speedColor, marginBottom: '20px', textAlign: 'center', zIndex: 10 }}>{speedMessage}</h1>
       
       <div className="report-flex-wrapper">
