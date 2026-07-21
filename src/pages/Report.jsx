@@ -56,15 +56,15 @@ export default function Report() {
     setTimeout(() => setShowVideoOverlay(false), 500);
   };
 
-  // Perfection (Levi GIF) overlay logic — runs for 5s (simultaneously over video if high speed)
+  // Perfection (Levi GIF) overlay logic — triggers AFTER video overlay completes
   useEffect(() => {
-    if (accuracy >= 93) {
+    if (accuracy >= 93 && !showVideoOverlay) {
       const timer = setTimeout(() => {
         setShowPerfectionOverlay(false);
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [accuracy]);
+  }, [accuracy, showVideoOverlay]);
 
   const getDetailsForCategory = (category) => {
     if (!testResults) return [];
@@ -192,17 +192,17 @@ ${testResults.typedText}`;
         </div>
       )}
 
-      {/* 2. Perfection Overlay (Levi GIF) for Accuracy >= 93% (Shows simultaneously over video if both trigger) */}
-      {accuracy >= 93 && showPerfectionOverlay && (
+      {/* 2. Perfection Overlay (Levi GIF) for Accuracy >= 93% (Shows AFTER Zenitsu video completes) */}
+      {!showVideoOverlay && accuracy >= 93 && showPerfectionOverlay && (
         <div style={{ 
           position: 'fixed', 
           top: 0, 
           left: 0, 
           width: '100vw', 
           height: '100vh', 
-          backgroundColor: showVideoOverlay ? 'rgba(0, 0, 0, 0.35)' : 'rgba(0, 0, 0, 0.85)', 
+          backgroundColor: 'rgba(0, 0, 0, 0.85)', 
           pointerEvents: 'none', 
-          zIndex: 10001, 
+          zIndex: 9999, 
           display: 'flex', 
           flexDirection: 'column',
           justifyContent: 'center', 
