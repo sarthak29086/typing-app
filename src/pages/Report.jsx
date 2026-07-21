@@ -17,7 +17,7 @@ export default function Report() {
     if (accuracy >= 93) {
       const timer = setTimeout(() => {
         setShowPerfectionOverlay(false);
-      }, 3000);
+      }, 5000);
       return () => clearTimeout(timer);
     }
   }, [accuracy]);
@@ -107,17 +107,37 @@ ${testResults.typedText}`;
           left: 0, 
           width: '100vw', 
           height: '100vh', 
-          backgroundColor: 'rgba(0, 0, 0, 0.75)', 
+          backgroundColor: 'rgba(0, 0, 0, 0.85)', 
           pointerEvents: 'none', 
           zIndex: 9999, 
           display: 'flex', 
           flexDirection: 'column',
           justifyContent: 'center', 
           alignItems: 'center',
-          gap: '20px'
+          gap: '24px',
+          padding: '20px'
         }}>
-          <img src="/perfection_png.png" style={{ maxWidth: '400px', width: '80%', filter: 'drop-shadow(0 0 15px rgba(255, 215, 0, 0.8))' }} alt="Perfection" />
-          <img src="/levi.gif" style={{ maxWidth: '450px', width: '80%', borderRadius: '12px', boxShadow: '0 0 25px rgba(0, 240, 255, 0.6)' }} alt="Levi" />
+          <img 
+            src="/perfection_png.png" 
+            style={{ 
+              maxWidth: '450px', 
+              width: '85%', 
+              filter: 'drop-shadow(0 0 20px rgba(255, 215, 0, 0.9))' 
+            }} 
+            alt="Perfection" 
+          />
+          <img 
+            src="/levi.gif" 
+            style={{ 
+              maxWidth: '650px', 
+              width: '90%', 
+              maxHeight: '65vh', 
+              objectFit: 'contain', 
+              borderRadius: '12px', 
+              boxShadow: '0 0 35px rgba(0, 240, 255, 0.7)' 
+            }} 
+            alt="Levi" 
+          />
         </div>
       )}
 
