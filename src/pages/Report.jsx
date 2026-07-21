@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../context/TestContext';
 
@@ -7,20 +7,63 @@ export default function Report() {
   const { testConfig, testResults } = useTest();
   const [copied, setCopied] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
+  
+  const hasHighSpeed = testResults && testResults.realSpeed >= 35;
+  const [showVideoOverlay, setShowVideoOverlay] = useState(hasHighSpeed);
+  const [fadeVideoOut, setFadeVideoOut] = useState(false);
   const [showPerfectionOverlay, setShowPerfectionOverlay] = useState(true);
+
+  const videoRef = useRef(null);
 
   const accuracy = (testResults && testResults.grossWpm > 0)
     ? Math.max(0, (testResults.realSpeed / testResults.grossWpm) * 100)
     : 0;
 
+  // Video overlay 22-second playback & fade out logic for realSpeed >= 35
   useEffect(() => {
-    if (accuracy >= 93) {
+    if (hasHighSpeed && showVideoOverlay) {
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.play().catch(err => console.log("Autoplay playback notice:", err));
+      }
+
+      const fadeTimer = setTimeout(() => {
+        setFadeVideoOut(true);
+      }, 21000); // Start fade out at 21s
+
+      const removeTimer = setTimeout(() => {
+        setShowVideoOverlay(false);
+      }, 22000); // Fully remove video overlay at 22s
+
+      return () => {
+        clearTimeout(fadeTimer);
+        clearTimeout(removeTimer);
+      };
+    }
+  }, [hasHighSpeed, showVideoOverlay]);
+
+  // Backup trigger when video currentTime reaches 22 seconds
+  const handleVideoTimeUpdate = () => {
+    if (videoRef.current && videoRef.current.currentTime >= 22 && !fadeVideoOut) {
+      setFadeVideoOut(true);
+      setTimeout(() => setShowVideoOverlay(false), 1000);
+    }
+  };
+
+  const skipVideo = () => {
+    setFadeVideoOut(true);
+    setTimeout(() => setShowVideoOverlay(false), 500);
+  };
+
+  // Perfection (Levi GIF) overlay logic — triggers after video overlay completes
+  useEffect(() => {
+    if (accuracy >= 93 && !showVideoOverlay) {
       const timer = setTimeout(() => {
         setShowPerfectionOverlay(false);
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [accuracy]);
+  }, [accuracy, showVideoOverlay]);
 
   const getDetailsForCategory = (category) => {
     if (!testResults) return [];
@@ -100,7 +143,56 @@ ${testResults.typedText}`;
 
   return (
     <div className="report-page-container">
-      {accuracy >= 93 && showPerfectionOverlay && (
+      {/* 1. Fullscreen Video Overlay for Real Speed >= 35 (Plays for 22s then fades out) */}
+      {showVideoOverlay && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100vw', 
+          height: '100vh', 
+          backgroundColor: '#000', 
+          zIndex: 10000, 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          transition: 'opacity 1s ease-in-out',
+          opacity: fadeVideoOut ? 0 : 1,
+          pointerEvents: fadeVideoOut ? 'none' : 'auto'
+        }}>
+          <video
+            ref={videoRef}
+            src="/zenitsu.mp4"
+            autoPlay
+            playsInline
+            onTimeUpdate={handleVideoTimeUpdate}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          />
+          <button 
+            onClick={skipVideo}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+              color: '#fff',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              padding: '8px 16px',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              zIndex: 10001,
+              backdropFilter: 'blur(4px)'
+            }}
+          >
+            Skip Video ✕
+          </button>
+        </div>
+      )}
+
+      {/* 2. Perfection Overlay (Levi GIF) for Accuracy >= 93% */}
+      {!showVideoOverlay && accuracy >= 93 && showPerfectionOverlay && (
         <div style={{ 
           position: 'fixed', 
           top: 0, 

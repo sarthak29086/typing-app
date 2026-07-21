@@ -8,9 +8,9 @@ export default function Setup() {
   const [autoFullscreen, setAutoFullscreen] = useState(false);
   const [formData, setFormData] = useState({
     name: 'Shiro Musay Sahay',
-    practiceNo: '',
-    timerMinutes: '1',
-    timerSeconds: '0',
+    practiceNo: '1765',
+    timerMinutes: '0',
+    timerSeconds: '10',
     paragraph: 'Success is often described as the achievement of a goal, but its meaning can be different for each person. For some, success may mean excelling in education, while for others it may involve building a career, supporting a family, or contributing to society. Regardless of how success is defined, certain qualities help people move closer to their goals. These qualities include determination, discipline, patience, and a willingness to learn from experience. Many successful individuals have faced challenges and setbacks before reaching their objectives. Failure is not necessarily the opposite of success; it is often a part of the journey. Every mistake provides an opportunity to learn and improve. Furthermore, setting realistic and measurable goals can keep one motivated. It is also important to maintain a positive mindset, as a negative attitude can hinder progress. Support from friends, family, or mentors can make a significant difference. Ultimately, achieving success requires continuous effort and a strong belief in oneself. Whether the goal is personal or professional, the path to success is rarely a straight line, but with perseverance and hard work, anything is possible.',
   });
 
