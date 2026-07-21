@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTest } from '../context/TestContext';
 
@@ -7,6 +7,20 @@ export default function Report() {
   const { testConfig, testResults } = useTest();
   const [copied, setCopied] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [showPerfectionOverlay, setShowPerfectionOverlay] = useState(true);
+
+  const accuracy = (testResults && testResults.grossWpm > 0)
+    ? Math.max(0, (testResults.realSpeed / testResults.grossWpm) * 100)
+    : 0;
+
+  useEffect(() => {
+    if (accuracy >= 93) {
+      const timer = setTimeout(() => {
+        setShowPerfectionOverlay(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [accuracy]);
 
   const getDetailsForCategory = (category) => {
     if (!testResults) return [];
@@ -86,6 +100,27 @@ ${testResults.typedText}`;
 
   return (
     <div className="report-page-container">
+      {accuracy >= 93 && showPerfectionOverlay && (
+        <div style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100vw', 
+          height: '100vh', 
+          backgroundColor: 'rgba(0, 0, 0, 0.75)', 
+          pointerEvents: 'none', 
+          zIndex: 9999, 
+          display: 'flex', 
+          flexDirection: 'column',
+          justifyContent: 'center', 
+          alignItems: 'center',
+          gap: '20px'
+        }}>
+          <img src="/perfection_png.png" style={{ maxWidth: '400px', width: '80%', filter: 'drop-shadow(0 0 15px rgba(255, 215, 0, 0.8))' }} alt="Perfection" />
+          <img src="/levi.gif" style={{ maxWidth: '450px', width: '80%', borderRadius: '12px', boxShadow: '0 0 25px rgba(0, 240, 255, 0.6)' }} alt="Levi" />
+        </div>
+      )}
+
       {testResults.realSpeed > 35 && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 50, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <img src="/fireworks.gif" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} alt="Fireworks" />
