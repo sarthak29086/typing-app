@@ -3,13 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useTest } from '../context/TestContext';
 
 // ─────────────────────────────────────────────────────────────
-// Canvas animation: glass crack → lightning → spiral black hole
+// Canvas animation: glass crack → swallow DOM → 3D Black Hole
 // Used exclusively for the 40+ WPM "Apex" tier
 // ─────────────────────────────────────────────────────────────
-function ApexTransitionCanvas({ onComplete }) {
+function ApexTransitionCanvas({ onComplete, onSwallow }) {
   const canvasRef = useRef(null);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+  
+  // Trigger DOM swallow immediately
+  useEffect(() => {
+    onSwallow();
+  }, [onSwallow]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -18,7 +23,7 @@ function ApexTransitionCanvas({ onComplete }) {
     const W = canvas.width = window.innerWidth;
     const H = canvas.height = window.innerHeight;
     const cx = W / 2, cy = H / 2;
-    const maxR = Math.sqrt(cx * cx + cy * cy) * 1.25;
+    const maxR = Math.sqrt(cx * cx + cy * cy) * 1.2;
 
     // ── Build glass crack tree from center ──
     const cracks = [];
@@ -27,11 +32,11 @@ function ApexTransitionCanvas({ onComplete }) {
       const ex = x + Math.cos(angle) * len;
       const ey = y + Math.sin(angle) * len;
       cracks.push({ x1: x, y1: y, x2: ex, y2: ey, depth });
-      const branches = depth === 0 ? 3 : (Math.random() < 0.75 ? 2 : 1);
+      const branches = depth === 0 ? 3 : (Math.random() < 0.8 ? 2 : 1);
       for (let b = 0; b < branches; b++) {
-        const ba = angle + (Math.random() - 0.5) * 1.4;
-        const bl = len * (0.25 + Math.random() * 0.35);
-        const t = 0.3 + Math.random() * 0.5;
+        const ba = angle + (Math.random() - 0.5) * 1.5;
+        const bl = len * (0.2 + Math.random() * 0.4);
+        const t = 0.25 + Math.random() * 0.55;
         addCrack(
           x + Math.cos(angle) * len * t,
           y + Math.sin(angle) * len * t,
@@ -39,16 +44,16 @@ function ApexTransitionCanvas({ onComplete }) {
         );
       }
     };
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-      addCrack(cx, cy, a, maxR * (0.8 + Math.random() * 0.25), 0);
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+      addCrack(cx, cy, a, maxR * (0.7 + Math.random() * 0.3), 0);
     }
 
     // ── Timing constants (ms) ──
-    const T_GLASS = 2200;
-    const T_LIGHTNING_END = 2000;
-    const T_BH = 3800;
-    const T_TOTAL = T_GLASS + T_BH; // 6000ms
+    const T_GLASS = 1200;
+    const T_SWALLOW = 2500; // DOM takes 2.5s to get sucked in
+    const T_EXPAND = 2500; // Black hole then violently expands
+    const T_TOTAL = T_GLASS + T_SWALLOW + T_EXPAND; // 6200ms
 
     let start = null, rafId;
     let lightningBolts = [], lastLightningMs = -999;
@@ -56,16 +61,60 @@ function ApexTransitionCanvas({ onComplete }) {
     const makeBolt = () => {
       const pts = [];
       const a = Math.random() * Math.PI * 2;
-      const len = 180 + Math.random() * 300;
-      let x = cx + (Math.random() - 0.5) * 120;
-      let y = cy + (Math.random() - 0.5) * 120;
+      const len = 200 + Math.random() * 400;
+      let x = cx + (Math.random() - 0.5) * 80;
+      let y = cy + (Math.random() - 0.5) * 80;
       pts.push([x, y]);
-      for (let s = 0; s < 14; s++) {
-        x += Math.cos(a) * len / 14 + (Math.random() - 0.5) * 60;
-        y += Math.sin(a) * len / 14 + (Math.random() - 0.5) * 60;
+      for (let s = 0; s < 18; s++) {
+        x += Math.cos(a) * len / 18 + (Math.random() - 0.5) * 70;
+        y += Math.sin(a) * len / 18 + (Math.random() - 0.5) * 70;
         pts.push([x, y]);
       }
       return pts;
+    };
+
+    const drawAccretionDisk = (elapsed, easeBhT, bhRadius, isBack) => {
+      ctx.save();
+      ctx.rotate(elapsed * 0.001); // Swirling rotation
+      // The disk starts highly tilted (0.15) and flattens out (1.0) as the black hole consumes the screen
+      ctx.scale(1, 0.15 + 0.85 * easeBhT);
+      
+      // Intense photon ring
+      const ringRadius = bhRadius * 1.4 + 5;
+      if (ringRadius > 2 && easeBhT < 0.95) {
+         ctx.beginPath();
+         ctx.arc(0, 0, ringRadius, isBack ? Math.PI : 0, isBack ? Math.PI*2 : Math.PI);
+         ctx.strokeStyle = `rgba(255, 180, 50, ${1 - Math.pow(easeBhT, 3)})`;
+         ctx.lineWidth = Math.max(2, bhRadius * 0.15);
+         ctx.shadowBlur = 40;
+         ctx.shadowColor = '#ff5500';
+         ctx.stroke();
+         ctx.shadowBlur = 0;
+      }
+
+      // Swirling star matter & gas
+      for (let i = 0; i < 450; i++) {
+          const pAngle = (i / 450) * Math.PI * 2 + elapsed * 0.004 * (450/(i+1));
+          const isBackParticle = Math.sin(pAngle) < 0;
+          if (isBack !== isBackParticle) continue; // Draw front or back only
+          
+          const baseDist = 12 + i * 1.8;
+          // Pushed outwards dramatically as bhRadius grows
+          const dist = baseDist + Math.pow(easeBhT, 2.5) * maxR * 1.5;
+          
+          if (dist < bhRadius * 0.95) continue; // Consumed by event horizon
+
+          const px = Math.cos(pAngle) * dist;
+          const py = Math.sin(pAngle) * dist;
+          
+          ctx.beginPath();
+          ctx.arc(px, py, Math.random() * 3 + 0.5, 0, Math.PI * 2);
+          const hue = 15 + i * 0.15 + elapsed * 0.05;
+          const alpha = Math.max(0, 1 - dist/(maxR * 1.4));
+          ctx.fillStyle = `hsla(${hue}, 100%, 65%, ${alpha})`;
+          ctx.fill();
+      }
+      ctx.restore();
     };
 
     const draw = (ts) => {
@@ -80,90 +129,84 @@ function ApexTransitionCanvas({ onComplete }) {
       }
 
       ctx.clearRect(0, 0, W, H);
-      const glassT = Math.min(elapsed / T_GLASS, 1);
-      const bhElapsed = Math.max(0, elapsed - T_GLASS);
-      const bhT = Math.min(bhElapsed / T_BH, 1);
 
-      // ── GLASS + LIGHTNING PHASE ──
-      if (glassT > 0) {
-        ctx.fillStyle = `rgba(0,0,0,${glassT * 0.65})`;
+      const glassT = Math.min(elapsed / T_GLASS, 1);
+      // Black hole starts tiny (sucking phase), then rapidly expands at the end
+      const bhT = Math.max(0, elapsed / T_TOTAL); 
+      // Exponential curve: stays small for a long time, then shoots up
+      const easeBhT = Math.pow(bhT, 4.5); 
+      const bhRadius = Math.max(2 + elapsed * 0.005, maxR * easeBhT); // Minimum size that slowly grows, then explodes
+
+      // ── 1. GLASS SHATTER PHASE ──
+      if (glassT > 0 && glassT < 1) {
+        ctx.fillStyle = `rgba(0,0,0,${glassT * 0.4})`;
         ctx.fillRect(0, 0, W, H);
 
-        const crackReveal = Math.min(glassT * 1.8, 1);
+        const crackReveal = Math.pow(glassT, 0.5);
         cracks.forEach(c => {
-          const lt = Math.min(crackReveal * 1.3, 1);
+          const lt = Math.min(crackReveal * 1.5, 1);
           ctx.beginPath();
           ctx.moveTo(c.x1, c.y1);
           ctx.lineTo(c.x1 + (c.x2 - c.x1) * lt, c.y1 + (c.y2 - c.y1) * lt);
-          ctx.strokeStyle = `rgba(220,240,255,${Math.max(0, 0.85 - c.depth * 0.18)})`;
-          ctx.lineWidth = Math.max(0.5, 3.0 - c.depth * 0.8);
-          ctx.shadowColor = '#00f0ff';
-          ctx.shadowBlur = Math.max(0, 10 - c.depth * 2);
+          ctx.strokeStyle = `rgba(230,250,255,${Math.max(0, 1.0 - c.depth * 0.15 - glassT)})`; // Fades out
+          ctx.lineWidth = Math.max(0.5, 3.5 - c.depth * 0.8);
+          ctx.shadowColor = '#00ffff';
+          ctx.shadowBlur = Math.max(0, 12 - c.depth * 2);
           ctx.stroke();
           ctx.shadowBlur = 0;
         });
 
-        if (elapsed < T_LIGHTNING_END) {
-          if (elapsed - lastLightningMs > 60 + Math.random() * 120) {
-            lightningBolts = [makeBolt(), makeBolt(), makeBolt(), makeBolt()];
+        // Sci-Fi Lightning Strikes
+        if (elapsed < T_GLASS * 0.8) {
+          if (elapsed - lastLightningMs > 50 + Math.random() * 80) {
+            lightningBolts = Array.from({length: 5}).map(makeBolt);
             lastLightningMs = elapsed;
           }
           ctx.save();
-          ctx.lineWidth = 2.0;
-          ctx.shadowBlur = 30;
-          ctx.shadowColor = '#00e5ff';
+          ctx.lineWidth = 2.5;
+          ctx.shadowBlur = 35;
+          ctx.shadowColor = '#a200ff'; // Purple lightning
           lightningBolts.forEach(bolt => {
             ctx.beginPath();
             ctx.moveTo(bolt[0][0], bolt[0][1]);
             bolt.slice(1).forEach(([bx, by]) => ctx.lineTo(bx, by));
-            ctx.strokeStyle = `rgba(140,220,255,${0.7 + Math.random() * 0.3})`;
+            ctx.strokeStyle = `rgba(200,100,255,${0.8 + Math.random() * 0.2})`;
             ctx.stroke();
           });
           ctx.restore();
-
-          if (Math.random() < 0.08) {
-            ctx.fillStyle = `rgba(80,180,255,${Math.random() * 0.25})`;
+          
+          if (Math.random() < 0.1) {
+            ctx.fillStyle = `rgba(160,0,255,${Math.random() * 0.2})`;
             ctx.fillRect(0, 0, W, H);
           }
         }
       }
 
-      // ── BLACK HOLE PHASE ──
-      if (bhT > 0) {
-        const bhRadius = maxR * Math.pow(bhT, 0.5);
+      // ── 2. BLACK HOLE (3D Interstellar Style) ──
+      ctx.save();
+      ctx.translate(cx, cy);
 
-        // Outer purple/cyan glow ring
-        const gGrad = ctx.createRadialGradient(cx, cy, bhRadius * 0.75, cx, cy, bhRadius * 1.5);
-        gGrad.addColorStop(0, 'rgba(0,0,0,0)');
-        gGrad.addColorStop(0.35, `rgba(130,0,255,${0.85 * (1 - bhT * 0.3)})`);
-        gGrad.addColorStop(0.7, `rgba(0,212,255,${0.5 * (1 - bhT * 0.5)})`);
-        gGrad.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.beginPath();
-        ctx.arc(cx, cy, bhRadius * 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = gGrad;
-        ctx.fill();
+      // Back half of accretion disk
+      drawAccretionDisk(elapsed, easeBhT, bhRadius, true);
+      
+      // Event Horizon
+      ctx.beginPath();
+      ctx.arc(0, 0, bhRadius, 0, Math.PI * 2);
+      ctx.fillStyle = '#000';
+      ctx.shadowBlur = 50 * (1 - easeBhT);
+      ctx.shadowColor = '#000';
+      ctx.fill();
+      ctx.shadowBlur = 0;
 
-        // Spiraling accretion particles
-        for (let i = 0; i < 130; i++) {
-          const baseA = (i / 130) * Math.PI * 2;
-          const angle = baseA + bhT * Math.PI * 16;
-          const pR = bhRadius + Math.sin(i * 1.7 + bhT * 24) * 22 * (1 - bhT * 0.7) + 5;
-          const pSize = Math.max(0.6, 2.5 * (1 - bhT * 0.5));
-          ctx.beginPath();
-          ctx.arc(
-            cx + Math.cos(angle) * pR,
-            cy + Math.sin(angle) * pR,
-            pSize, 0, Math.PI * 2
-          );
-          ctx.fillStyle = `hsla(${270 + Math.sin(i * 0.8) * 50}, 100%, 75%, ${0.9 - bhT * 0.3})`;
-          ctx.fill();
-        }
+      // Front half of accretion disk
+      drawAccretionDisk(elapsed, easeBhT, bhRadius, false);
 
-        // Solid black hole
-        ctx.beginPath();
-        ctx.arc(cx, cy, bhRadius, 0, Math.PI * 2);
-        ctx.fillStyle = '#000';
-        ctx.fill();
+      ctx.restore();
+
+      // Atmospheric fade-to-black vignette as it expands
+      if (easeBhT > 0.1) {
+        ctx.fillStyle = `rgba(0,0,0,${easeBhT * 1.5})`;
+        ctx.fillRect(0, 0, W, H);
       }
 
       rafId = requestAnimationFrame(draw);
@@ -209,8 +252,8 @@ export default function Report() {
   // ── Apex state machine ──
   // Stage 0: Zenitsu Video (if isApex or isHighSpeedOnly)
   // Stage 1: Levi GIF (if isApex + 93%+ accuracy)
-  // Stage 2: Report Page 10s Wait
-  // Stage 3: Canvas Glass + Lightning + Black Hole Transition
+  // Stage 2: Report Page 4s Wait (Shortened for speed)
+  // Stage 3: Canvas Glass + Swallow DOM + 3D Black Hole
   // Stage 4: Dark Typing Video
   // Stage 5: Done (stay on Report)
   const [apexStage, setApexStage] = useState(() => {
@@ -224,8 +267,11 @@ export default function Report() {
   const gutsVideoRef = useRef(null);
   const darkVideoRef = useRef(null);
 
-  // Countdown timer state for 10s wait on report page
-  const [countdown, setCountdown] = useState(10);
+  // Swallow effect state (applies CSS class)
+  const [swallowed, setSwallowed] = useState(false);
+
+  // Countdown timer state for 4s wait on report page
+  const [countdown, setCountdown] = useState(4);
 
   // ──────────────────────────────────────────────
   // STAGE 0: Zenitsu Video Auto-play & Timer
@@ -283,18 +329,18 @@ export default function Report() {
   }, [apexStage, isApex]);
 
   // ──────────────────────────────────────────────
-  // STAGE 2: 10 Seconds Wait on Report Page (Apex & Ultimate)
+  // STAGE 2: 4 Seconds Wait on Report Page (Apex & Ultimate)
   // ──────────────────────────────────────────────
   useEffect(() => {
     if (apexStage === 2 && isApex) {
-      setCountdown(10);
+      setCountdown(4); // Reduced from 10s to 4s
       const interval = setInterval(() => {
         setCountdown(prev => (prev > 1 ? prev - 1 : 1));
       }, 1000);
 
       const waitTimer = setTimeout(() => {
         setApexStage(3); // Start Canvas Transition!
-      }, 10000);
+      }, 4000);
 
       return () => {
         clearInterval(interval);
@@ -304,7 +350,7 @@ export default function Report() {
   }, [apexStage, isApex]);
 
   // ──────────────────────────────────────────────
-  // ULTIMATE PERFECT (35-39 WPM + 93%+): Guts Video after 10s
+  // ULTIMATE PERFECT (35-39 WPM + 93%+): Guts Video after 4s
   // ──────────────────────────────────────────────
   const [showGutsVideo, setShowGutsVideo] = useState(false);
   const [fadeGutsOut, setFadeGutsOut] = useState(false);
@@ -313,7 +359,7 @@ export default function Report() {
     if (isUltimatePerfect) {
       const timer = setTimeout(() => {
         setShowGutsVideo(true);
-      }, 10000);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [isUltimatePerfect]);
@@ -342,7 +388,7 @@ export default function Report() {
 
   const handleDarkVideoEnded = () => {
     setFadeOverlayOut(true);
-    setTimeout(() => { setFadeOverlayOut(false); setApexStage(5); }, 800);
+    setTimeout(() => { setFadeOverlayOut(false); setSwallowed(false); setApexStage(5); }, 800);
   };
   const skipDarkVideo = () => handleDarkVideoEnded();
 
@@ -422,11 +468,12 @@ ${testResults.typedText}`;
   };
 
   return (
-    <div className="report-page-container">
+    <div className="report-page-container" style={{ overflow: 'hidden' }}>
 
       {/* ═══ STAGE 3: APEX CANVAS TRANSITION ═══ */}
       {apexStage === 3 && (
         <ApexTransitionCanvas
+          onSwallow={() => setSwallowed(true)}
           onComplete={() => setApexStage(4)}
         />
       )}
@@ -538,14 +585,13 @@ ${testResults.typedText}`;
         </div>
       )}
 
-      {/* ═══ SPEED MESSAGE ═══ */}
-      <h1 style={{ fontSize: '3rem', fontWeight: 'bold', color: speedColor, marginBottom: '20px', textAlign: 'center', zIndex: 10 }}>
+      {/* ═══ SPEED MESSAGE (Animated on swallow) ═══ */}
+      <h1 className={swallowed ? "swallowed-element" : ""} style={{ fontSize: '3rem', fontWeight: 'bold', color: speedColor, marginBottom: '20px', textAlign: 'center', zIndex: 10 }}>
         {speedMessage}
       </h1>
 
-      {/* ═══ REPORT CONTENT ═══ */}
-      <div className="report-flex-wrapper">
-
+      {/* ═══ REPORT CONTENT (Animated on swallow) ═══ */}
+      <div className={`report-flex-wrapper ${swallowed ? "swallowed-element" : ""}`}>
         {/* Left Panel */}
         <div className="report-left-panel">
           <div className="report-card-updated">

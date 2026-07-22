@@ -491,3 +491,16 @@ body {
 .submit-test-btn:hover {
   background: #41719c;
 }
+
+@keyframes swallowEffect {
+  0% { transform: scale(1) rotate(0deg); opacity: 1; filter: blur(0px) brightness(1); }
+  20% { transform: scale(0.9) rotate(5deg) translateZ(0); opacity: 0.9; filter: blur(2px) brightness(1.2); }
+  50% { transform: scale(0.4) rotate(180deg) translateZ(0); opacity: 0.5; filter: blur(10px) brightness(1.5); }
+  100% { transform: scale(0) rotate(720deg) translateZ(0); opacity: 0; filter: blur(25px) brightness(2); }
+}
+
+.swallowed-element {
+  animation: swallowEffect 2.5s cubic-bezier(0.5, 0, 0.2, 1) forwards;
+  transform-origin: center center;
+  will-change: transform, filter, opacity;
+}
