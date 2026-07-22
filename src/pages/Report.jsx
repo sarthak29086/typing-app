@@ -18,20 +18,20 @@ function ApexTransitionCanvas({ onComplete }) {
     const W = canvas.width = window.innerWidth;
     const H = canvas.height = window.innerHeight;
     const cx = W / 2, cy = H / 2;
-    const maxR = Math.sqrt(cx * cx + cy * cy) * 1.1;
+    const maxR = Math.sqrt(cx * cx + cy * cy) * 1.25;
 
     // ── Build glass crack tree from center ──
     const cracks = [];
     const addCrack = (x, y, angle, len, depth) => {
-      if (depth > 3 || len < 25) return;
+      if (depth > 3 || len < 20) return;
       const ex = x + Math.cos(angle) * len;
       const ey = y + Math.sin(angle) * len;
       cracks.push({ x1: x, y1: y, x2: ex, y2: ey, depth });
-      const branches = depth === 0 ? 3 : (Math.random() < 0.7 ? 2 : 1);
+      const branches = depth === 0 ? 3 : (Math.random() < 0.75 ? 2 : 1);
       for (let b = 0; b < branches; b++) {
         const ba = angle + (Math.random() - 0.5) * 1.4;
         const bl = len * (0.25 + Math.random() * 0.35);
-        const t = 0.35 + Math.random() * 0.45;
+        const t = 0.3 + Math.random() * 0.5;
         addCrack(
           x + Math.cos(angle) * len * t,
           y + Math.sin(angle) * len * t,
@@ -39,16 +39,16 @@ function ApexTransitionCanvas({ onComplete }) {
         );
       }
     };
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-      addCrack(cx, cy, a, maxR * (0.8 + Math.random() * 0.2), 0);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      addCrack(cx, cy, a, maxR * (0.8 + Math.random() * 0.25), 0);
     }
 
     // ── Timing constants (ms) ──
-    const T_GLASS = 2500;
+    const T_GLASS = 2200;
     const T_LIGHTNING_END = 2000;
-    const T_BH = 4000;
-    const T_TOTAL = T_GLASS + T_BH; // 6500ms
+    const T_BH = 3800;
+    const T_TOTAL = T_GLASS + T_BH; // 6000ms
 
     let start = null, rafId;
     let lightningBolts = [], lastLightningMs = -999;
@@ -56,13 +56,13 @@ function ApexTransitionCanvas({ onComplete }) {
     const makeBolt = () => {
       const pts = [];
       const a = Math.random() * Math.PI * 2;
-      const len = 160 + Math.random() * 250;
-      let x = cx + (Math.random() - 0.5) * 100;
-      let y = cy + (Math.random() - 0.5) * 100;
+      const len = 180 + Math.random() * 300;
+      let x = cx + (Math.random() - 0.5) * 120;
+      let y = cy + (Math.random() - 0.5) * 120;
       pts.push([x, y]);
       for (let s = 0; s < 14; s++) {
-        x += Math.cos(a) * len / 14 + (Math.random() - 0.5) * 50;
-        y += Math.sin(a) * len / 14 + (Math.random() - 0.5) * 50;
+        x += Math.cos(a) * len / 14 + (Math.random() - 0.5) * 60;
+        y += Math.sin(a) * len / 14 + (Math.random() - 0.5) * 60;
         pts.push([x, y]);
       }
       return pts;
@@ -72,7 +72,6 @@ function ApexTransitionCanvas({ onComplete }) {
       if (!start) start = ts;
       const elapsed = ts - start;
 
-      // When animation is done, fill black and call callback
       if (elapsed >= T_TOTAL) {
         ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, W, H);
@@ -87,46 +86,43 @@ function ApexTransitionCanvas({ onComplete }) {
 
       // ── GLASS + LIGHTNING PHASE ──
       if (glassT > 0) {
-        // Progressive dark overlay
-        ctx.fillStyle = `rgba(0,0,0,${glassT * 0.6})`;
+        ctx.fillStyle = `rgba(0,0,0,${glassT * 0.65})`;
         ctx.fillRect(0, 0, W, H);
 
-        // Glass cracks
         const crackReveal = Math.min(glassT * 1.8, 1);
         cracks.forEach(c => {
           const lt = Math.min(crackReveal * 1.3, 1);
           ctx.beginPath();
           ctx.moveTo(c.x1, c.y1);
           ctx.lineTo(c.x1 + (c.x2 - c.x1) * lt, c.y1 + (c.y2 - c.y1) * lt);
-          ctx.strokeStyle = `rgba(210,235,255,${Math.max(0, 0.8 - c.depth * 0.18)})`;
-          ctx.lineWidth = Math.max(0.4, 2.8 - c.depth * 0.8);
-          ctx.shadowColor = '#80b4ff';
-          ctx.shadowBlur = Math.max(0, 7 - c.depth * 2);
+          ctx.strokeStyle = `rgba(220,240,255,${Math.max(0, 0.85 - c.depth * 0.18)})`;
+          ctx.lineWidth = Math.max(0.5, 3.0 - c.depth * 0.8);
+          ctx.shadowColor = '#00f0ff';
+          ctx.shadowBlur = Math.max(0, 10 - c.depth * 2);
           ctx.stroke();
           ctx.shadowBlur = 0;
         });
 
-        // Lightning bolts (first 2 seconds only)
         if (elapsed < T_LIGHTNING_END) {
-          if (elapsed - lastLightningMs > 70 + Math.random() * 130) {
-            lightningBolts = [makeBolt(), makeBolt(), makeBolt()];
+          if (elapsed - lastLightningMs > 60 + Math.random() * 120) {
+            lightningBolts = [makeBolt(), makeBolt(), makeBolt(), makeBolt()];
             lastLightningMs = elapsed;
           }
           ctx.save();
-          ctx.lineWidth = 1.5;
-          ctx.shadowBlur = 28;
-          ctx.shadowColor = '#00ccff';
+          ctx.lineWidth = 2.0;
+          ctx.shadowBlur = 30;
+          ctx.shadowColor = '#00e5ff';
           lightningBolts.forEach(bolt => {
             ctx.beginPath();
             ctx.moveTo(bolt[0][0], bolt[0][1]);
             bolt.slice(1).forEach(([bx, by]) => ctx.lineTo(bx, by));
-            ctx.strokeStyle = `rgba(100,200,255,${0.65 + Math.random() * 0.35})`;
+            ctx.strokeStyle = `rgba(140,220,255,${0.7 + Math.random() * 0.3})`;
             ctx.stroke();
           });
           ctx.restore();
-          // Occasional screen flash
-          if (Math.random() < 0.07) {
-            ctx.fillStyle = `rgba(70,130,255,${Math.random() * 0.2})`;
+
+          if (Math.random() < 0.08) {
+            ctx.fillStyle = `rgba(80,180,255,${Math.random() * 0.25})`;
             ctx.fillRect(0, 0, W, H);
           }
         }
@@ -134,52 +130,40 @@ function ApexTransitionCanvas({ onComplete }) {
 
       // ── BLACK HOLE PHASE ──
       if (bhT > 0) {
-        const bhRadius = maxR * Math.pow(bhT, 0.55); // ease-in expansion
+        const bhRadius = maxR * Math.pow(bhT, 0.5);
 
-        // Outer purple/violet glow ring
-        const gGrad = ctx.createRadialGradient(cx, cy, bhRadius * 0.8, cx, cy, bhRadius * 1.45);
+        // Outer purple/cyan glow ring
+        const gGrad = ctx.createRadialGradient(cx, cy, bhRadius * 0.75, cx, cy, bhRadius * 1.5);
         gGrad.addColorStop(0, 'rgba(0,0,0,0)');
-        gGrad.addColorStop(0.4, `rgba(90,0,180,${0.75 * (1 - bhT * 0.4)})`);
+        gGrad.addColorStop(0.35, `rgba(130,0,255,${0.85 * (1 - bhT * 0.3)})`);
+        gGrad.addColorStop(0.7, `rgba(0,212,255,${0.5 * (1 - bhT * 0.5)})`);
         gGrad.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.beginPath();
-        ctx.arc(cx, cy, bhRadius * 1.45, 0, Math.PI * 2);
+        ctx.arc(cx, cy, bhRadius * 1.5, 0, Math.PI * 2);
         ctx.fillStyle = gGrad;
         ctx.fill();
 
-        // Spiraling accretion disk particles
-        for (let i = 0; i < 110; i++) {
-          const baseA = (i / 110) * Math.PI * 2;
-          const angle = baseA + bhT * Math.PI * 14; // spins faster as it grows
-          const pR = bhRadius + Math.sin(i * 1.7 + bhT * 22) * 18 * (1 - bhT * 0.75) + 4;
-          const pSize = Math.max(0.5, 2.2 * (1 - bhT * 0.55));
+        // Spiraling accretion particles
+        for (let i = 0; i < 130; i++) {
+          const baseA = (i / 130) * Math.PI * 2;
+          const angle = baseA + bhT * Math.PI * 16;
+          const pR = bhRadius + Math.sin(i * 1.7 + bhT * 24) * 22 * (1 - bhT * 0.7) + 5;
+          const pSize = Math.max(0.6, 2.5 * (1 - bhT * 0.5));
           ctx.beginPath();
           ctx.arc(
             cx + Math.cos(angle) * pR,
             cy + Math.sin(angle) * pR,
             pSize, 0, Math.PI * 2
           );
-          ctx.fillStyle = `hsla(${260 + Math.sin(i * 0.8) * 40}, 100%, 75%, ${0.9 - bhT * 0.3})`;
+          ctx.fillStyle = `hsla(${270 + Math.sin(i * 0.8) * 50}, 100%, 75%, ${0.9 - bhT * 0.3})`;
           ctx.fill();
         }
 
-        // The hole itself — solid black
+        // Solid black hole
         ctx.beginPath();
         ctx.arc(cx, cy, bhRadius, 0, Math.PI * 2);
         ctx.fillStyle = '#000';
         ctx.fill();
-
-        // Subtle inner rings (accretion disk depth)
-        [0.58, 0.33, 0.14].forEach((ratio, i) => {
-          const rR = bhRadius * ratio;
-          if (rR < 3) return;
-          const rg = ctx.createRadialGradient(cx, cy, rR * 0.55, cx, cy, rR);
-          rg.addColorStop(0, `rgba(120,0,220,${0.28 - i * 0.08})`);
-          rg.addColorStop(1, 'rgba(0,0,0,0)');
-          ctx.beginPath();
-          ctx.arc(cx, cy, rR, 0, Math.PI * 2);
-          ctx.fillStyle = rg;
-          ctx.fill();
-        });
       }
 
       rafId = requestAnimationFrame(draw);
@@ -217,138 +201,148 @@ export default function Report() {
     : 0;
 
   // ── Tier classification ──
-  // Tier 1 – APEX:             speed >= 40 (ALL celebrations + 10s + black hole + dark video)
-  // Tier 2 – ULTIMATE:         35 <= speed < 40 AND accuracy >= 93% (Guts video)
-  // Tier 3 – HIGH_SPEED:       35 <= speed < 40 AND accuracy < 93%  (Zenitsu video + fireworks)
-  // Tier 4 – HIGH_ACCURACY:    speed < 35 AND accuracy >= 93%       (Levi GIF)
   const isApex             = roundedRealSpeed >= 40;
   const isUltimatePerfect  = !isApex && roundedRealSpeed >= 35 && accuracy >= 93;
   const isHighSpeedOnly    = !isApex && roundedRealSpeed >= 35 && accuracy < 93;
   const isHighAccuracyOnly = roundedRealSpeed < 35 && accuracy >= 93;
 
-  // Zenitsu plays for: Apex AND High Speed Only
-  const zenitsuOnLoad = isApex || isHighSpeedOnly;
+  // ── Apex state machine ──
+  // Stage 0: Zenitsu Video (if isApex or isHighSpeedOnly)
+  // Stage 1: Levi GIF (if isApex + 93%+ accuracy)
+  // Stage 2: Report Page 10s Wait
+  // Stage 3: Canvas Glass + Lightning + Black Hole Transition
+  // Stage 4: Dark Typing Video
+  // Stage 5: Done (stay on Report)
+  const [apexStage, setApexStage] = useState(() => {
+    if (isApex || isHighSpeedOnly) return 0; // Start at Zenitsu
+    if (isHighAccuracyOnly) return 1;        // Start at Levi
+    return 2;                                // Default Report
+  });
 
-  // ── Zenitsu video state ──
-  const [showZenitsuOverlay, setShowZenitsuOverlay] = useState(zenitsuOnLoad);
-  const [fadeZenitsuOut, setFadeZenitsuOut] = useState(false);
+  const [fadeOverlayOut, setFadeOverlayOut] = useState(false);
   const zenitsuVideoRef = useRef(null);
-
-  // ── Levi GIF state ──
-  // Initialised true only for High Accuracy Only (standalone)
-  // For Apex: triggered after Zenitsu ends (if accuracy >= 93)
-  const [showPerfectionOverlay, setShowPerfectionOverlay] = useState(isHighAccuracyOnly);
-
-  // ── Guts video state (Ultimate Perfection only) ──
-  const [showGutsOverlay, setShowGutsOverlay] = useState(false);
-  const [fadeGutsIn, setFadeGutsIn] = useState(false);
-  const [fadeGutsOut, setFadeGutsOut] = useState(false);
   const gutsVideoRef = useRef(null);
-
-  // ── Apex sequence state ──
-  // 'idle' → 'waiting' (10s on report) → 'transition' (canvas) → 'video' (dark video) → 'done'
-  const [apexPhase, setApexPhase] = useState('idle');
-  const [showDarkVideo, setShowDarkVideo] = useState(false);
-  const [fadeDarkVideoOut, setFadeDarkVideoOut] = useState(false);
   const darkVideoRef = useRef(null);
 
+  // Countdown timer state for 10s wait on report page
+  const [countdown, setCountdown] = useState(10);
+
   // ──────────────────────────────────────────────
-  // ZENITSU – auto-play & auto-dismiss at 24s
+  // STAGE 0: Zenitsu Video Auto-play & Timer
   // ──────────────────────────────────────────────
   useEffect(() => {
-    if (zenitsuOnLoad && showZenitsuOverlay) {
+    if (apexStage === 0) {
       if (zenitsuVideoRef.current) {
         zenitsuVideoRef.current.currentTime = 0;
         zenitsuVideoRef.current.play().catch(() => {});
       }
-      const fadeTimer = setTimeout(() => setFadeZenitsuOut(true), 23000);
-      const removeTimer = setTimeout(() => setShowZenitsuOverlay(false), 24000);
-      return () => { clearTimeout(fadeTimer); clearTimeout(removeTimer); };
+      const fadeTimer = setTimeout(() => setFadeOverlayOut(true), 23000);
+      const endTimer = setTimeout(() => advanceFromZenitsu(), 24000);
+      return () => { clearTimeout(fadeTimer); clearTimeout(endTimer); };
     }
-  }, [zenitsuOnLoad, showZenitsuOverlay]);
+  }, [apexStage]);
+
+  const advanceFromZenitsu = () => {
+    setFadeOverlayOut(false);
+    if (isApex) {
+      if (accuracy >= 93) {
+        setApexStage(1); // Go to Levi GIF
+      } else {
+        setApexStage(2); // Skip Levi, go to Report Wait
+      }
+    } else {
+      setApexStage(5); // High Speed Only done -> stay on report
+    }
+  };
+
+  const skipZenitsu = () => {
+    setFadeOverlayOut(true);
+    setTimeout(() => advanceFromZenitsu(), 400);
+  };
 
   const handleZenitsuTimeUpdate = () => {
-    if (zenitsuVideoRef.current && zenitsuVideoRef.current.currentTime >= 24 && !fadeZenitsuOut) {
-      setFadeZenitsuOut(true);
-      setTimeout(() => setShowZenitsuOverlay(false), 1000);
+    if (zenitsuVideoRef.current && zenitsuVideoRef.current.currentTime >= 24 && !fadeOverlayOut) {
+      skipZenitsu();
     }
-  };
-  const skipZenitsu = () => {
-    setFadeZenitsuOut(true);
-    setTimeout(() => setShowZenitsuOverlay(false), 500);
   };
 
   // ──────────────────────────────────────────────
-  // LEVI GIF – trigger AFTER Zenitsu for Apex tier;
-  // standalone 5s for High Accuracy Only
+  // STAGE 1: Levi GIF (5 Seconds)
   // ──────────────────────────────────────────────
   useEffect(() => {
-    // When Zenitsu finishes for Apex + high accuracy, show Levi
-    if (!showZenitsuOverlay && isApex && accuracy >= 93 && apexPhase === 'idle') {
-      setShowPerfectionOverlay(true);
-    }
-  }, [showZenitsuOverlay, isApex, accuracy, apexPhase]);
-
-  useEffect(() => {
-    if (showPerfectionOverlay) {
-      const timer = setTimeout(() => setShowPerfectionOverlay(false), 5000);
+    if (apexStage === 1) {
+      const timer = setTimeout(() => {
+        if (isApex) {
+          setApexStage(2); // Go to Report Wait
+        } else {
+          setApexStage(5); // High Accuracy Only done -> stay on report
+        }
+      }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [showPerfectionOverlay]);
+  }, [apexStage, isApex]);
 
   // ──────────────────────────────────────────────
-  // GUTS VIDEO – Ultimate Perfection (35-39 + 93%+)
-  // Wait 10s on report, then fade in
+  // STAGE 2: 10 Seconds Wait on Report Page (Apex & Ultimate)
   // ──────────────────────────────────────────────
   useEffect(() => {
-    if (isUltimatePerfect) {
+    if (apexStage === 2 && isApex) {
+      setCountdown(10);
+      const interval = setInterval(() => {
+        setCountdown(prev => (prev > 1 ? prev - 1 : 1));
+      }, 1000);
+
       const waitTimer = setTimeout(() => {
-        setFadeGutsIn(true);
-        setShowGutsOverlay(true);
+        setApexStage(3); // Start Canvas Transition!
       }, 10000);
-      return () => clearTimeout(waitTimer);
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(waitTimer);
+      };
+    }
+  }, [apexStage, isApex]);
+
+  // ──────────────────────────────────────────────
+  // ULTIMATE PERFECT (35-39 WPM + 93%+): Guts Video after 10s
+  // ──────────────────────────────────────────────
+  const [showGutsVideo, setShowGutsVideo] = useState(false);
+  const [fadeGutsOut, setFadeGutsOut] = useState(false);
+
+  useEffect(() => {
+    if (isUltimatePerfect) {
+      const timer = setTimeout(() => {
+        setShowGutsVideo(true);
+      }, 10000);
+      return () => clearTimeout(timer);
     }
   }, [isUltimatePerfect]);
 
   useEffect(() => {
-    if (showGutsOverlay && gutsVideoRef.current) {
+    if (showGutsVideo && gutsVideoRef.current) {
       gutsVideoRef.current.currentTime = 0;
       gutsVideoRef.current.play().catch(() => {});
     }
-  }, [showGutsOverlay]);
+  }, [showGutsVideo]);
 
-  const handleGutsVideoEnded = () => {
+  const handleGutsEnded = () => {
     setFadeGutsOut(true);
-    setTimeout(() => { setShowGutsOverlay(false); setFadeGutsIn(false); setFadeGutsOut(false); }, 1000);
+    setTimeout(() => { setShowGutsVideo(false); setFadeGutsOut(false); }, 1000);
   };
 
   // ──────────────────────────────────────────────
-  // APEX SEQUENCE – 10s wait → canvas → dark video
-  // Fires when Zenitsu + Levi have both finished
+  // STAGE 4: Dark Typing Video (Apex Tier)
   // ──────────────────────────────────────────────
-  const apexCelebrationsDone = isApex && !showZenitsuOverlay && !showPerfectionOverlay;
-
   useEffect(() => {
-    if (apexCelebrationsDone && apexPhase === 'idle') {
-      setApexPhase('waiting');
-      const waitTimer = setTimeout(() => {
-        setApexPhase('transition');
-      }, 10000);
-      return () => clearTimeout(waitTimer);
-    }
-  }, [apexCelebrationsDone, apexPhase]);
-
-  // When dark video starts, play it
-  useEffect(() => {
-    if (showDarkVideo && darkVideoRef.current) {
+    if (apexStage === 4 && darkVideoRef.current) {
       darkVideoRef.current.currentTime = 0;
       darkVideoRef.current.play().catch(() => {});
     }
-  }, [showDarkVideo]);
+  }, [apexStage]);
 
   const handleDarkVideoEnded = () => {
-    setFadeDarkVideoOut(true);
-    setTimeout(() => { setShowDarkVideo(false); setFadeDarkVideoOut(false); setApexPhase('done'); }, 1000);
+    setFadeOverlayOut(true);
+    setTimeout(() => { setFadeOverlayOut(false); setApexStage(5); }, 800);
   };
   const skipDarkVideo = () => handleDarkVideoEnded();
 
@@ -368,9 +362,6 @@ export default function Report() {
     }
   };
 
-  // ──────────────────────────────────────────────
-  // GUARD – no results yet
-  // ──────────────────────────────────────────────
   if (!testResults || testResults.timeTakenSeconds === 0) {
     return (
       <div className="report-container">
@@ -380,9 +371,6 @@ export default function Report() {
     );
   }
 
-  // ──────────────────────────────────────────────
-  // HELPERS
-  // ──────────────────────────────────────────────
   const minutes = Math.floor(testResults.timeTakenSeconds / 60);
   const seconds = testResults.timeTakenSeconds % 60;
   const timeTakenStr = `${minutes}m ${seconds}s`;
@@ -425,38 +413,32 @@ ${testResults.typedText}`;
 
   const overlayBtn = {
     position: 'absolute', top: '20px', right: '20px',
-    backgroundColor: 'rgba(0,0,0,0.6)', color: '#fff',
-    border: '1px solid rgba(255,255,255,0.3)',
-    padding: '8px 16px', borderRadius: '20px',
+    backgroundColor: 'rgba(0,0,0,0.65)', color: '#fff',
+    border: '1px solid rgba(255,255,255,0.4)',
+    padding: '10px 20px', borderRadius: '24px',
     cursor: 'pointer', fontSize: '14px', fontWeight: 'bold',
-    zIndex: 10002, backdropFilter: 'blur(4px)'
+    zIndex: 20005, backdropFilter: 'blur(8px)',
+    boxShadow: '0 0 15px rgba(0,0,0,0.5)'
   };
 
-  // ──────────────────────────────────────────────
-  // RENDER
-  // ──────────────────────────────────────────────
   return (
     <div className="report-page-container">
 
-      {/* ═══ APEX CANVAS TRANSITION (glass + lightning + black hole) ═══ */}
-      {apexPhase === 'transition' && (
+      {/* ═══ STAGE 3: APEX CANVAS TRANSITION ═══ */}
+      {apexStage === 3 && (
         <ApexTransitionCanvas
-          onComplete={() => {
-            setApexPhase('video');
-            setShowDarkVideo(true);
-          }}
+          onComplete={() => setApexStage(4)}
         />
       )}
 
-      {/* ═══ DARK TYPING VIDEO (Apex – plays after canvas transition) ═══ */}
-      {showDarkVideo && (
+      {/* ═══ STAGE 4: DARK TYPING VIDEO (Apex) ═══ */}
+      {apexStage === 4 && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          backgroundColor: '#000', zIndex: 10000,
+          backgroundColor: '#000', zIndex: 19000,
           display: 'flex', justifyContent: 'center', alignItems: 'center',
-          transition: 'opacity 1s ease-in-out',
-          opacity: fadeDarkVideoOut ? 0 : 1,
-          pointerEvents: fadeDarkVideoOut ? 'none' : 'auto'
+          transition: 'opacity 0.8s ease-in-out',
+          opacity: fadeOverlayOut ? 0 : 1
         }}>
           <video
             ref={darkVideoRef}
@@ -469,15 +451,14 @@ ${testResults.typedText}`;
         </div>
       )}
 
-      {/* ═══ ZENITSU VIDEO (Apex + High Speed Only) ═══ */}
-      {zenitsuOnLoad && showZenitsuOverlay && (
+      {/* ═══ STAGE 0: ZENITSU VIDEO (Apex OR 35-39 WPM) ═══ */}
+      {apexStage === 0 && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          backgroundColor: '#000', zIndex: 10000,
+          backgroundColor: '#000', zIndex: 19000,
           display: 'flex', justifyContent: 'center', alignItems: 'center',
-          transition: 'opacity 1s ease-in-out',
-          opacity: fadeZenitsuOut ? 0 : 1,
-          pointerEvents: fadeZenitsuOut ? 'none' : 'auto'
+          transition: 'opacity 0.8s ease-in-out',
+          opacity: fadeOverlayOut ? 0 : 1
         }}>
           <video
             ref={zenitsuVideoRef}
@@ -490,45 +471,70 @@ ${testResults.typedText}`;
         </div>
       )}
 
-      {/* ═══ LEVI GIF + PERFECTION (High Accuracy Only OR Apex after Zenitsu) ═══ */}
-      {showPerfectionOverlay && (
+      {/* ═══ STAGE 1: LEVI GIF (Apex 93%+ OR <35 WPM 93%+) ═══ */}
+      {apexStage === 1 && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          backgroundColor: 'rgba(0,0,0,0.85)', pointerEvents: 'none', zIndex: 9999,
+          backgroundColor: 'rgba(0,0,0,0.88)', pointerEvents: 'none', zIndex: 18000,
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           alignItems: 'center', gap: '24px', padding: '20px'
         }}>
-          <img src="/perfection_png.png" style={{ maxWidth: '450px', width: '85%', filter: 'drop-shadow(0 0 20px rgba(255,215,0,0.9))' }} alt="Perfection" />
-          <img src="/levi.gif" style={{ maxWidth: '650px', width: '90%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 0 35px rgba(0,240,255,0.7)' }} alt="Levi" />
+          <img src="/perfection_png.png" style={{ maxWidth: '450px', width: '85%', filter: 'drop-shadow(0 0 25px rgba(255,215,0,0.95))' }} alt="Perfection" />
+          <img src="/levi.gif" style={{ maxWidth: '650px', width: '90%', maxHeight: '65vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 0 40px rgba(0,240,255,0.8)' }} alt="Levi" />
         </div>
       )}
 
-      {/* ═══ GUTS VIDEO (Ultimate Perfection – 35-39 WPM + 93%+) ═══ */}
-      {showGutsOverlay && (
+      {/* ═══ GUTS VIDEO (35-39 WPM + 93%+) ═══ */}
+      {showGutsVideo && (
         <div style={{
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          backgroundColor: '#000', zIndex: 10000,
+          backgroundColor: '#000', zIndex: 19000,
           display: 'flex', justifyContent: 'center', alignItems: 'center',
-          transition: 'opacity 1s ease-in-out',
-          opacity: fadeGutsOut ? 0 : (fadeGutsIn ? 1 : 0),
-          pointerEvents: fadeGutsOut ? 'none' : 'auto'
+          transition: 'opacity 0.8s ease-in-out',
+          opacity: fadeGutsOut ? 0 : 1
         }}>
           <video
             ref={gutsVideoRef}
             src="/guts.mp4"
             autoPlay playsInline
-            onEnded={handleGutsVideoEnded}
+            onEnded={handleGutsEnded}
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
           />
-          <button onClick={handleGutsVideoEnded} style={overlayBtn}>Back to Report ✕</button>
+          <button onClick={handleGutsEnded} style={overlayBtn}>Back to Report ✕</button>
         </div>
       )}
 
-      {/* ═══ FIREWORKS + CONGRATS (Apex AND High Speed Only) ═══ */}
+      {/* ═══ FIREWORKS + CONGRATS OVERLAY (Apex OR 35-39 WPM) ═══ */}
       {(isApex || isHighSpeedOnly) && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', pointerEvents: 'none', zIndex: 50, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <img src="/fireworks.gif" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.6 }} alt="Fireworks" />
           <img src="/congrats_png.png" style={{ zIndex: 51, maxWidth: '400px' }} alt="Congrats" />
+        </div>
+      )}
+
+      {/* ═══ APEX COUNTDOWN BANNER (Shown during Stage 2 wait on report page) ═══ */}
+      {isApex && apexStage === 2 && (
+        <div style={{
+          position: 'fixed', top: '15px', left: '50%', transform: 'translateX(-50%)',
+          backgroundColor: 'rgba(15, 7, 32, 0.92)', color: '#c084fc',
+          border: '2px solid #a855f7', borderRadius: '30px',
+          padding: '10px 24px', zIndex: 1000,
+          boxShadow: '0 0 25px rgba(168, 85, 247, 0.6)',
+          display: 'flex', alignItems: 'center', gap: '12px',
+          fontFamily: 'sans-serif', fontWeight: 'bold', fontSize: '1rem'
+        }}>
+          <span style={{ fontSize: '1.4rem' }}>⚡</span>
+          <span>BLACK HOLE ERUPTION IN <span style={{ color: '#fff', fontSize: '1.2rem' }}>{countdown}s</span></span>
+          <button
+            onClick={() => setApexStage(3)}
+            style={{
+              marginLeft: '8px', background: '#a855f7', color: '#fff',
+              border: 'none', borderRadius: '14px', padding: '4px 12px',
+              fontSize: '0.85rem', cursor: 'pointer', fontWeight: 'bold'
+            }}
+          >
+            Trigger Now 🔥
+          </button>
         </div>
       )}
 
@@ -540,7 +546,7 @@ ${testResults.typedText}`;
       {/* ═══ REPORT CONTENT ═══ */}
       <div className="report-flex-wrapper">
 
-        {/* Left – Metrics */}
+        {/* Left Panel */}
         <div className="report-left-panel">
           <div className="report-card-updated">
             <h1 style={{ color: '#1a4e7e', marginBottom: '20px', textAlign: 'center' }}>Typing Test Report</h1>
@@ -625,7 +631,7 @@ ${testResults.typedText}`;
           </div>
         </div>
 
-        {/* Right – Copy prompt */}
+        {/* Right Panel */}
         <div className="report-right-panel">
           <div className="prompt-card">
             <div className="prompt-header-box">
